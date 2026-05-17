@@ -33,7 +33,7 @@ window.audioHigh = 0;
 window.audioVol  = 0;
 
 // ── Color globals — read by Hydra's lambda functions ───────────────
-window.colorH = 270;  // EVA-01 Purple by default
+window.colorH = 270;  // EVA-01 Purple por defecto
 window.colorS = 85;
 window.colorL = 50;
 
@@ -130,13 +130,13 @@ function drawSpectrum() {
     const val  = data[i * step] / 255;     // normalize
     const barH = val * H;
 
-    // Color shifts from base hue through the spectrum
+    // Color shifts basados en tu paleta HSL seleccionada
     const hueShift = (window.colorH + i * 0.6) % 360;
     const sat  = window.colorS - i * 0.3;
     const lum  = window.colorL + i * 0.15;
     specCtx.fillStyle = `hsla(${hueShift}, ${sat}%, ${lum}%, 0.85)`;
 
-    // Mirror: bottom half normal, top half mirrored (symmetric waveform)
+    // Mirror: symmetric waveform
     specCtx.fillRect(i * barW, H / 2 - barH / 2, Math.max(barW - 1, 1), barH);
   }
 }
@@ -229,7 +229,7 @@ $sliderHue.addEventListener('input', (e) => {
   window.colorH = parseInt(e.target.value, 10);
   $hueValue.textContent = `${window.colorH}°`;
   updateColorPreview();
-  hydraCtrl.applyPreset(hydraCtrl.currentPreset); // Re-render with new color
+  hydraCtrl.applyPreset(hydraCtrl.currentPreset); // Re-render inmediato
 });
 
 $sliderSat.addEventListener('input', (e) => {
@@ -246,7 +246,7 @@ $sliderLum.addEventListener('input', (e) => {
   hydraCtrl.applyPreset(hydraCtrl.currentPreset);
 });
 
-// EVA-01 Color Presets
+// EVA-01 Presets de color estáticos
 const evaColorPresets = {
   'eva-purple': { h: 270, s: 85, l: 50 },
   'lcl-green': { h: 130, s: 75, l: 45 },
@@ -275,7 +275,7 @@ $colorPresetBtns.forEach(btn => {
   });
 });
 
-// Initialize color preview
+// Iniciar preview de color de fondo
 updateColorPreview();
 
 // ════════════════════════════════════════════════════════════════════
@@ -290,7 +290,7 @@ $presetBtns.forEach(btn => {
 });
 
 // ════════════════════════════════════════════════════════════════════
-// RECORDING
+// RECORDING (OPTIMIZADO EN RESOLUCIÓN)
 // ════════════════════════════════════════════════════════════════════
 $btnRecord.addEventListener('click', async () => {
   if (recorder.isRecording) {
@@ -301,24 +301,23 @@ $btnRecord.addEventListener('click', async () => {
 });
 
 async function startRecording() {
-  // Reset download link from previous session
+  // Reset link de descarga previo
   $btnDownload.classList.add('hidden');
   $btnDownload.href = '';
 
-  // -- NUEVO: Forzar resolución 720p para liberar carga gráfica --
+  // ── OPTIMIZACIÓN: Forzar 720p para no ahogar el hilo del navegador ──
   $hydraCanvas.width = 1280;
   $hydraCanvas.height = 720;
   hydraCtrl.setResolution(1280, 720);
 
-  // Restart audio from the beginning so video and audio are in sync
+  // Reiniciar track para sincronizar audio y video de raíz
   analyzer.replay(async () => {
-    // Audio ended naturally → auto-stop recording
     await stopRecording();
     setPlayState(false);
   });
   setPlayState(true);
 
-  // Start capturing
+  // Iniciar captura (recorder.js se encargará de los 24fps y códecs ligeros)
   const audioStream = analyzer.getAudioStream();
   await recorder.start($hydraCanvas, audioStream);
 
@@ -328,8 +327,19 @@ async function startRecording() {
   $recIndicator.classList.remove('hidden');
 }
 
+async function stopRecording() {
+  const url = await recorder.stop();
+
+  $recLabel.textContent = 'REC';
+  $btnRecord.classList.remove('recording');
+  $recIndicator.classList.add('hidden');
+
+  // ── RESTAURAR: Regresar el canvas al tamaño original de la ventana ──
+  $hydraCanvas.width = window.innerWidth;
+  $hydraCanvas.height = window.innerHeight;
+  hydraCtrl.setResolution(window.innerWidth, window.innerHeight);
+
   if (url) {
-    // Build a filename from the track name
     const safeName = ($trackName.textContent || 'synthestesia')
       .replace(/[^a-z0-9_\-]/gi, '_')
       .toLowerCase();
@@ -343,17 +353,16 @@ async function startRecording() {
 // RESET
 // ════════════════════════════════════════════════════════════════════
 $btnReset.addEventListener('click', () => {
-  // Stop everything
   analyzer.stop();
   if (recorder.isRecording) recorder.stop();
 
-  // Reset audio globals
+  // Limpiar globales
   window.audioBass = 0;
   window.audioMid  = 0;
   window.audioHigh = 0;
   window.audioVol  = 0;
 
-  // Reset UI
+  // UI Reset
   $uploadScreen.classList.remove('hidden');
   $controlBar.classList.add('hidden');
   $colorPanel.classList.add('hidden');
@@ -364,7 +373,6 @@ $btnReset.addEventListener('click', () => {
   $recLabel.textContent = 'REC';
   $fileInput.value = '';
 
-  // Stop animation loop
   if (animFrameId) {
     cancelAnimationFrame(animFrameId);
     animFrameId = null;
@@ -397,7 +405,6 @@ $fileInput.addEventListener('change', (e) => {
 // UTILITY
 // ════════════════════════════════════════════════════════════════════
 function showError(msg) {
-  // Simple non-blocking error — replace with a toast if desired
   const el = document.createElement('div');
   el.style.cssText = `
     position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
