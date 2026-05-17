@@ -5,6 +5,7 @@
  *
  * How audio reactivity works:
  *  - app.js writes window.audioBass / audioMid / audioHigh / audioVol every frame
+ *  - app.js writes window.colorH / colorS / colorL for color control
  *  - Hydra evaluates lambda functions `() => audioBass * N` on each render tick
  *  - Because JavaScript resolves identifiers at call time (not definition time),
  *    the lambdas always read the freshest values from the global scope
@@ -14,12 +15,17 @@
  *   audioMid   — 250 Hz – 2 kHz  (snare, vocals, instruments)
  *   audioHigh  — 2 kHz – 20 kHz  (hi-hats, cymbals, air)
  *   audioVol   — overall energy
+ *
+ * Color values (HSL):
+ *   colorH     — [0, 360]  Hue
+ *   colorS     — [0, 100]  Saturation
+ *   colorL     — [0, 100]  Lightness
  */
 export class HydraController {
   constructor() {
     this.hydra         = null;
     this.currentPreset = 0;
-    this.numPresets    = 5;
+    this.numPresets    = 10;  // Expanded to 10 presets
   }
 
   // ── Init ─────────────────────────────────────────────────────────
@@ -47,13 +53,19 @@ export class HydraController {
   // ── Preset Switcher ───────────────────────────────────────────────
   applyPreset(index) {
     this.currentPreset = ((index % this.numPresets) + this.numPresets) % this.numPresets;
-    [
+    const presets = [
       this._p1_pulse,
       this._p2_spectral,
       this._p3_fractal,
       this._p4_vortex,
       this._p5_crystal,
-    ][this.currentPreset].call(this);
+      this._p6_evaSyncWaves,
+      this._p7_armoredWave,
+      this._p8_neuralGrid,
+      this._p9_berserkCore,
+      this._p10_etherealBloom,
+    ];
+    presets[this.currentPreset].call(this);
   }
 
   // ── PRESET 01 · Pulse ─────────────────────────────────────────────
@@ -66,9 +78,9 @@ export class HydraController {
       () => audioHigh * 5 + 0.5   // high adds color shift
     )
     .color(
-      () => audioBass * 2.2,
-      () => audioMid  * 0.9,
-      () => audioHigh * 2.8
+      () => (colorH / 360) * audioBass * 2.2,
+      () => (colorS / 100) * audioMid * 0.9,
+      () => (colorL / 100) * audioHigh * 2.8
     )
     .modulate(
       noise(() => audioMid * 3.5, 0.35),
@@ -92,9 +104,9 @@ export class HydraController {
       () => audioBass * 4
     )
     .color(
-      () => audioHigh * 2.5,
-      () => audioMid  * 1.8,
-      () => audioBass * 3.2
+      () => (colorH / 360) * audioHigh * 2.5,
+      () => (colorS / 100) * audioMid * 1.8,
+      () => (colorL / 100) * audioBass * 3.2
     )
     .diff(
       osc(
@@ -113,7 +125,7 @@ export class HydraController {
   _p3_fractal() {
     noise(
       () => audioBass * 4.5 + 1.2,
-      () => audioMid  * 0.4
+      () => audioMid * 0.4
     )
     .mult(
       osc(
@@ -123,9 +135,9 @@ export class HydraController {
       ).rotate(() => audioMid * 3.2)
     )
     .color(
-      () => audioBass * 2.8,
-      () => audioHigh * 3.2,
-      () => audioMid  * 1.6
+      () => (colorH / 360) * audioBass * 2.8,
+      () => (colorS / 100) * audioHigh * 3.2,
+      () => (colorL / 100) * audioMid * 1.6
     )
     .kaleid(() => Math.round(audioBass * 7) + 3)
     .rotate(() => audioVol * 2.2, 0.008)
@@ -148,16 +160,16 @@ export class HydraController {
       () => audioBass * 1.3
     )
     .color(
-      () => audioHigh * 2.2,
-      () => audioBass * 1.6,
-      () => audioMid  * 2.8
+      () => (colorH / 360) * audioHigh * 2.2,
+      () => (colorS / 100) * audioBass * 1.6,
+      () => (colorL / 100) * audioMid * 2.8
     )
     .add(
       osc(() => audioBass * 22, 0.1)
         .color(
-          () => audioMid  * 0.8,
+          () => (colorH / 360) * audioMid * 0.8,
           0,
-          () => audioHigh * 2.4
+          () => (colorL / 100) * audioHigh * 2.4
         ),
       () => audioVol * 0.42
     )
@@ -177,9 +189,9 @@ export class HydraController {
       noise(() => audioHigh * 3.2)
     )
     .color(
-      () => audioMid  * 3.8,
-      () => audioBass * 0.6,
-      () => audioHigh * 2.8
+      () => (colorH / 360) * audioMid * 3.8,
+      () => (colorS / 100) * audioBass * 0.6,
+      () => (colorL / 100) * audioHigh * 2.8
     )
     .add(
       osc(
@@ -190,6 +202,132 @@ export class HydraController {
       () => audioVol * 0.55
     )
     .kaleid(() => Math.round(audioHigh * 4) + 2)
+    .out(o0);
+  }
+
+  // ── PRESET 06 · EVA Sync Waves ─────────────────────────────────────
+  // Inspired by EVA Unit-01 synchronization waves
+  // Dual oscillating waves with purple/green interference pattern
+  _p6_evaSyncWaves() {
+    osc(
+      () => audioMid * 35 + 6,
+      () => audioBass * 0.3 + 0.1,
+      () => audioHigh * 3.2
+    )
+    .modulateRotate(
+      osc(() => audioMid * 18)
+        .rotate(() => audioBass * 2.2),
+      () => audioBass * 0.8
+    )
+    .color(
+      () => (colorH / 360) * audioHigh * 2.4,
+      () => (colorS / 100) * audioMid * 1.2,
+      () => (colorL / 100) * (0.4 + audioBass * 0.6)
+    )
+    .mult(
+      noise(() => audioMid * 2.8, 0.25)
+    )
+    .kaleid(() => Math.round(audioHigh * 5) + 2)
+    .out(o0);
+  }
+
+  // ── PRESET 07 · Armored Wave ───────────────────────────────────────
+  // Geometric armored plating effect with color modulation
+  // Sharp, crystalline structures responding to mid/high frequencies
+  _p7_armoredWave() {
+    osc(
+      () => audioHigh * 48 + 10,
+      0.08,
+      () => audioBass * 2.8
+    )
+    .rotate(() => audioVol * 1.8, 0.012)
+    .modulateScale(
+      voronoi(() => audioMid * 22, () => audioHigh * 0.35),
+      () => 1 + audioMid * 0.5
+    )
+    .color(
+      () => (colorH / 360) * (1 + audioHigh * 0.8),
+      () => (colorS / 100) * (0.6 + audioMid * 0.4),
+      () => (colorL / 100) * (0.5 + audioVol * 0.3)
+    )
+    .out(o0);
+  }
+
+  // ── PRESET 08 · Neural Grid ────────────────────────────────────────
+  // Cellular/neural network effect with dynamic color shifts
+  // Grid lattice that pulses with audio frequency bands
+  _p8_neuralGrid() {
+    voronoi(
+      () => audioMid * 32 + 8,
+      () => audioHigh * 0.5 + 0.08,
+      () => audioBass * 5.2
+    )
+    .color(
+      () => ((colorH + audioHigh * 120) / 360) % 1,
+      () => (colorS / 100) * (0.7 + audioMid * 0.3),
+      () => (colorL / 100) * (0.45 + audioVol * 0.35)
+    )
+    .modulateRotate(
+      osc(() => audioBass * 45)
+        .rotate(() => audioMid * 3),
+      () => audioMid * 0.6
+    )
+    .out(o0);
+  }
+
+  // ── PRESET 09 · Berserk Core ───────────────────────────────────────
+  // High-energy chaotic visualization — rapid color shifts
+  // Intense overlay effects that respond to all frequency bands
+  _p9_berserkCore() {
+    osc(
+      () => audioHigh * 95 + 15,
+      0.04,
+      () => audioBass * 4.2
+    )
+    .rotate(() => audioVol * Math.PI * 2, 0.02)
+    .add(
+      voronoi(() => audioMid * 45, () => audioHigh * 0.6)
+        .color(
+          () => ((colorH + audioVol * 180) / 360) % 1,
+          () => Math.min(100, (colorS / 100) * 150 + audioHigh * 50),
+          () => (colorL / 100) * (0.55 + audioVol * 0.35)
+        ),
+      () => audioBass * 0.6
+    )
+    .kaleid(() => Math.round(audioMid * 6) + 2)
+    .out(o0);
+  }
+
+  // ── PRESET 10 · Ethereal Bloom ─────────────────────────────────────
+  // Soft, dreamy visualization with smooth gradient shifts
+  // Gentle interference patterns with color blooming effects
+  _p10_etherealBloom() {
+    osc(
+      () => audioMid * 24 + 4,
+      () => audioBass * 0.25 + 0.08,
+      () => audioHigh * 2.8
+    )
+    .modulate(
+      noise(() => audioMid * 1.8, 0.35),
+      () => audioVol * 0.25
+    )
+    .color(
+      () => (colorH / 360) * (1 + audioHigh * 0.6),
+      () => (colorS / 100) * (0.55 + audioMid * 0.25),
+      () => (colorL / 100) * (0.55 + audioBass * 0.25)
+    )
+    .kaleid(3)
+    .rotate(() => audioVol * 0.8, 0.006)
+    .blend(
+      osc(() => audioHigh * 18)
+        .kaleid(2)
+        .color(
+          () => ((colorH + 180) / 360) % 1,
+          () => (colorS / 100) * 0.8,
+          () => (colorL / 100) * 0.6
+        ),
+      0.3
+    )
     .out(o0);
   }
 }
