@@ -35,7 +35,7 @@ export class VideoRecorder {
     this.chunks = [];
 
     // Build a MediaStream: video track from canvas + audio track from Web Audio
-    const videoStream = canvas.captureStream(30);
+    const videoStream = canvas.captureStream(24);
     const tracks = [...videoStream.getVideoTracks()];
     if (audioStream) tracks.push(...audioStream.getAudioTracks());
     const combined = new MediaStream(tracks);
