@@ -305,7 +305,7 @@ async function startRecording() {
   $btnDownload.classList.add('hidden');
   $btnDownload.href = '';
 
-// -- NUEVO: Forzar resolución 720p para liberar carga gráfica --
+  // -- NUEVO: Forzar resolución 720p para liberar carga gráfica --
   $hydraCanvas.width = 1280;
   $hydraCanvas.height = 720;
   hydraCtrl.setResolution(1280, 720);
@@ -327,18 +327,6 @@ async function startRecording() {
   $btnRecord.classList.add('recording');
   $recIndicator.classList.remove('hidden');
 }
-
-async function stopRecording() {
-  const url = await recorder.stop();
-
-  $recLabel.textContent = 'REC';
-  $btnRecord.classList.remove('recording');
-  $recIndicator.classList.add('hidden');
-
-  // -- NUEVO: Regresar el canvas al tamaño de la ventana --
-  $hydraCanvas.width = window.innerWidth;
-  $hydraCanvas.height = window.innerHeight;
-  hydraCtrl.setResolution(window.innerWidth, window.innerHeight);
 
   if (url) {
     // Build a filename from the track name
