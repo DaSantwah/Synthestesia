@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   HYDRAVIS · Dark Studio Theme
+   SYNTHESTESIA · Dark Studio Theme
    Font: Space Mono (display, controls) + DM Sans (body text)
    Palette: #050505 bg · #FFB300 amber accent · #1a1a1a panel
    ════════════════════════════════════════════════════════════════ */
@@ -176,6 +176,182 @@ html, body {
   text-align: center;
 }
 
+/* ══ COLOR CONTROL PANEL ═══════════════════════════════════════════ */
+#color-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 25;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 16px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  max-width: 280px;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#color-panel.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.color-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.color-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.color-title {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.color-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  border: 1px solid var(--panel-border);
+  background: hsl(270, 85%, 50%);
+  transition: background 0.1s ease;
+}
+
+/* Color Sliders */
+.color-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+}
+
+.slider-group label {
+  min-width: 32px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.color-slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent-dim);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.color-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.color-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.color-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.color-slider::-moz-range-thumb:hover {
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.slider-value {
+  min-width: 28px;
+  text-align: right;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Color Presets */
+.color-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.presets-label {
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.color-preset-btn {
+  flex: 1;
+  height: 28px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--r);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* EVA-01 Color Presets */
+.color-preset-btn[data-color="eva-purple"] {
+  background: hsl(270, 85%, 50%);
+}
+.color-preset-btn[data-color="lcl-green"] {
+  background: hsl(130, 75%, 45%);
+}
+.color-preset-btn[data-color="ui-amber"] {
+  background: hsl(38, 95%, 55%);
+}
+.color-preset-btn[data-color="at-cyan"] {
+  background: hsl(190, 80%, 50%);
+}
+.color-preset-btn[data-color="blood-red"] {
+  background: hsl(0, 100%, 45%);
+}
+
+.color-preset-btn:hover {
+  border-color: var(--accent);
+  transform: scale(1.05);
+  box-shadow: 0 0 8px currentColor;
+}
+
 /* ══ CONTROL BAR ═══════════════════════════════════════════════════ */
 #control-bar {
   position: fixed;
@@ -249,6 +425,7 @@ html, body {
   gap: 12px;
   min-width: 180px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .divider {
@@ -265,7 +442,11 @@ html, body {
   letter-spacing: 0.22em;
   color: var(--muted);
 }
-.preset-row { display: flex; gap: 3px; }
+.preset-row { 
+  display: flex; 
+  gap: 3px;
+  flex-wrap: wrap;
+}
 .preset-btn {
   font-family: var(--mono);
   font-size: 9px;
@@ -401,3 +582,22 @@ html, body {
 
 /* ── Utility ───────────────────────────────────────────────────── */
 .hidden { display: none !important; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .preset-row {
+    gap: 2px;
+  }
+  .preset-btn {
+    width: 26px;
+    height: 24px;
+    font-size: 8px;
+  }
+  #color-panel {
+    max-width: 260px;
+    padding: 12px;
+  }
+  .color-sliders {
+    gap: 8px;
+  }
+}
