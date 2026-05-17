@@ -305,10 +305,10 @@ async function startRecording() {
   $btnDownload.classList.add('hidden');
   $btnDownload.href = '';
 
-  // -- NUEVO: Forzar resolución 1080p para el render --
-  $hydraCanvas.width = 1920;
-  $hydraCanvas.height = 1080;
-  hydraCtrl.setResolution(1920, 1080);
+// -- NUEVO: Forzar resolución 720p para liberar carga gráfica --
+  $hydraCanvas.width = 1280;
+  $hydraCanvas.height = 720;
+  hydraCtrl.setResolution(1280, 720);
 
   // Restart audio from the beginning so video and audio are in sync
   analyzer.replay(async () => {
