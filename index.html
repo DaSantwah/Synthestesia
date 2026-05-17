@@ -11,13 +11,10 @@
 </head>
 <body>
 
-  <!-- Hydra renders onto this canvas (full screen) -->
   <canvas id="hydra-canvas"></canvas>
 
-  <!-- Mini spectrum bar drawn here, floats above visuals -->
   <canvas id="spectrum-canvas" width="480" height="56"></canvas>
 
-  <!-- ── UPLOAD SCREEN ────────────────────────────────────── -->
   <div id="upload-screen">
     <div class="hero">
       <div class="wordmark">SYNTH<span>ESTESIA</span></div>
@@ -42,7 +39,6 @@
     </p>
   </div>
 
-  <!-- ── COLOR CONTROL PANEL ──────────────────────────────── -->
   <div id="color-panel" class="hidden">
     <div class="color-panel-content">
       <div class="color-panel-header">
@@ -81,7 +77,6 @@
     </div>
   </div>
 
-  <!-- ── CONTROL BAR ──────────────────────────────────────── -->
   <div id="control-bar" class="hidden">
 
     <div class="cb-left">
@@ -131,18 +126,21 @@
         DESCARGAR
       </a>
 
+      <button id="btn-toggle-color" class="icon-btn" title="Ajustes de Color">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03444 19.1759 5.09451 19.4353 5.01186 19.6733C4.82902 20.2001 4.50942 21.159 4.11373 21.8021C3.99309 21.9984 4.15949 22.2359 4.38446 22.1856C5.33418 21.9735 6.64161 21.5794 7.37893 21.2464C7.57564 21.1576 7.80415 21.1891 7.97157 21.3259C9.18243 21.7645 10.5113 22 12 22Z"/>
+        </svg>
+      </button>
+
       <button id="btn-reset" class="reset-btn" title="Cargar nuevo archivo">✕</button>
     </div>
   </div>
 
-  <!-- Recording indicator (top-right corner) -->
   <div id="rec-indicator" class="hidden">
     <span class="pulse-dot"></span>REC
   </div>
 
-  <!-- Hydra library (global, not a module) -->
   <script src="https://unpkg.com/hydra-synth"></script>
-  <!-- App entry point (ES module) -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
