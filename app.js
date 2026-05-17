@@ -6,7 +6,7 @@
  * - Animation loop → analyzer.update() + spectrum draw + time display
  * - Playback controls → play / stop
  * - Preset selector → hydraCtrl.applyPreset()
- * - Color controls → update global color variables
+ * - Color controls → update global color variables + show/hide panel
  * - Recording → recorder.start() / stop() + download link
  * - Reset → return to upload screen
  *
@@ -58,6 +58,7 @@ const $btnRecord      = document.getElementById('btn-record');
 const $recLabel       = document.getElementById('rec-label');
 const $btnDownload    = document.getElementById('btn-download');
 const $btnReset       = document.getElementById('btn-reset');
+const $btnToggleColor = document.getElementById('btn-toggle-color'); // Selector del nuevo botón
 const $recIndicator   = document.getElementById('rec-indicator');
 const $presetBtns     = document.querySelectorAll('.preset-btn');
 const $colorPreview   = document.getElementById('color-preview');
@@ -177,8 +178,10 @@ async function handleFile(file) {
     // Transition to player UI
     $uploadScreen.classList.add('hidden');
     $controlBar.classList.remove('hidden');
-    $colorPanel.classList.remove('hidden');
     $specCanvas.classList.add('visible');
+    
+    // OPTIMIZACIÓN: Se mantiene oculto (.hidden) al inicio para no estorbar visualmente
+    $colorPanel.classList.add('hidden');
 
     // Reset playback buttons
     setPlayState(false);
@@ -224,6 +227,11 @@ function updateColorPreview() {
   const hsl = `hsl(${window.colorH}, ${window.colorS}%, ${window.colorL}%)`;
   $colorPreview.style.background = hsl;
 }
+
+// Alternar visibilidad del panel con el nuevo botón
+$btnToggleColor.addEventListener('click', () => {
+  $colorPanel.classList.toggle('hidden');
+});
 
 $sliderHue.addEventListener('input', (e) => {
   window.colorH = parseInt(e.target.value, 10);
@@ -305,6 +313,9 @@ async function startRecording() {
   $btnDownload.classList.add('hidden');
   $btnDownload.href = '';
 
+  // Ocultar el panel de personalización automáticamente al grabar para un render limpio
+  $colorPanel.classList.add('hidden');
+
   // ── OPTIMIZACIÓN: Forzar 720p para no ahogar el hilo del navegador ──
   $hydraCanvas.width = 1280;
   $hydraCanvas.height = 720;
@@ -317,7 +328,7 @@ async function startRecording() {
   });
   setPlayState(true);
 
-  // Iniciar captura (recorder.js se encargará de los 24fps y códecs ligeros)
+  // Iniciar captura
   const audioStream = analyzer.getAudioStream();
   await recorder.start($hydraCanvas, audioStream);
 
