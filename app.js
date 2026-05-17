@@ -2,24 +2,24 @@
  * Synthestesia — Main App
  *
  * Orchestrates:
- *  - File drop / file input → AudioAnalyzer.loadFile()
- *  - Animation loop → analyzer.update() + spectrum draw + time display
- *  - Playback controls → play / stop
- *  - Preset selector → hydraCtrl.applyPreset()
- *  - Color controls → update global color variables
- *  - Recording → recorder.start() / stop() + download link
- *  - Reset → return to upload screen
+ * - File drop / file input → AudioAnalyzer.loadFile()
+ * - Animation loop → analyzer.update() + spectrum draw + time display
+ * - Playback controls → play / stop
+ * - Preset selector → hydraCtrl.applyPreset()
+ * - Color controls → update global color variables
+ * - Recording → recorder.start() / stop() + download link
+ * - Reset → return to upload screen
  *
  * Audio globals (written here, read by Hydra lambda functions):
- *   window.audioBass  [0, 1]
- *   window.audioMid   [0, 1]
- *   window.audioHigh  [0, 1]
- *   window.audioVol   [0, 1]
+ * window.audioBass  [0, 1]
+ * window.audioMid   [0, 1]
+ * window.audioHigh  [0, 1]
+ * window.audioVol   [0, 1]
  *
  * Color globals (written here, read by Hydra lambda functions):
- *   window.colorH     [0, 360]  — Hue
- *   window.colorS     [0, 100]  — Saturation
- *   window.colorL     [0, 100]  — Lightness
+ * window.colorH     [0, 360]  — Hue
+ * window.colorS     [0, 100]  — Saturation
+ * window.colorL     [0, 100]  — Lightness
  */
 
 import { AudioAnalyzer }  from './audio-analyzer.js';
@@ -305,6 +305,11 @@ async function startRecording() {
   $btnDownload.classList.add('hidden');
   $btnDownload.href = '';
 
+  // -- NUEVO: Forzar resolución 1080p para el render --
+  $hydraCanvas.width = 1920;
+  $hydraCanvas.height = 1080;
+  hydraCtrl.setResolution(1920, 1080);
+
   // Restart audio from the beginning so video and audio are in sync
   analyzer.replay(async () => {
     // Audio ended naturally → auto-stop recording
@@ -329,6 +334,11 @@ async function stopRecording() {
   $recLabel.textContent = 'REC';
   $btnRecord.classList.remove('recording');
   $recIndicator.classList.add('hidden');
+
+  // -- NUEVO: Regresar el canvas al tamaño de la ventana --
+  $hydraCanvas.width = window.innerWidth;
+  $hydraCanvas.height = window.innerHeight;
+  hydraCtrl.setResolution(window.innerWidth, window.innerHeight);
 
   if (url) {
     // Build a filename from the track name
