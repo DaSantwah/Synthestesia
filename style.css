@@ -80,14 +80,15 @@ html, body {
   font-size: clamp(38px, 6vw, 58px);
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: var(--text);
+  color: var(--accent); /* Aplica el verde neón directamente a 'SYNTH' */
   line-height: 1;
   user-select: none;
-  text-shadow: 0 0 15px rgba(160, 50, 255, 0.3);
+  text-shadow: 0 0 15px var(--accent-glow); /* Resplandor verde */
 }
+
 .wordmark span { 
-  color: var(--accent); 
-  text-shadow: 0 0 10px var(--accent-glow);
+  color: #a032ff; /* Morado brillante estilo EVA para 'ESTESIA' */
+  text-shadow: 0 0 15px rgba(160, 50, 255, 0.4); /* Resplandor morado */
 }
 
 .tagline {
