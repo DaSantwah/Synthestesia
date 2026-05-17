@@ -6,6 +6,7 @@
  *  - Animation loop → analyzer.update() + spectrum draw + time display
  *  - Playback controls → play / stop
  *  - Preset selector → hydraCtrl.applyPreset()
+ *  - Color controls → update global color variables
  *  - Recording → recorder.start() / stop() + download link
  *  - Reset → return to upload screen
  *
@@ -14,6 +15,11 @@
  *   window.audioMid   [0, 1]
  *   window.audioHigh  [0, 1]
  *   window.audioVol   [0, 1]
+ *
+ * Color globals (written here, read by Hydra lambda functions):
+ *   window.colorH     [0, 360]  — Hue
+ *   window.colorS     [0, 100]  — Saturation
+ *   window.colorL     [0, 100]  — Lightness
  */
 
 import { AudioAnalyzer }  from './audio-analyzer.js';
@@ -26,6 +32,11 @@ window.audioMid  = 0;
 window.audioHigh = 0;
 window.audioVol  = 0;
 
+// ── Color globals — read by Hydra's lambda functions ───────────────
+window.colorH = 270;  // EVA-01 Purple by default
+window.colorS = 85;
+window.colorL = 50;
+
 // ── Module instances ────────────────────────────────────────────────
 const analyzer  = new AudioAnalyzer();
 const hydraCtrl = new HydraController();
@@ -36,6 +47,7 @@ const $hydraCanvas    = document.getElementById('hydra-canvas');
 const $specCanvas     = document.getElementById('spectrum-canvas');
 const $uploadScreen   = document.getElementById('upload-screen');
 const $controlBar     = document.getElementById('control-bar');
+const $colorPanel     = document.getElementById('color-panel');
 const $dropZone       = document.getElementById('drop-zone');
 const $fileInput      = document.getElementById('file-input');
 const $trackName      = document.getElementById('track-name');
@@ -48,6 +60,14 @@ const $btnDownload    = document.getElementById('btn-download');
 const $btnReset       = document.getElementById('btn-reset');
 const $recIndicator   = document.getElementById('rec-indicator');
 const $presetBtns     = document.querySelectorAll('.preset-btn');
+const $colorPreview   = document.getElementById('color-preview');
+const $sliderHue      = document.getElementById('slider-hue');
+const $sliderSat      = document.getElementById('slider-sat');
+const $sliderLum      = document.getElementById('slider-lum');
+const $hueValue       = document.getElementById('hue-value');
+const $satValue       = document.getElementById('sat-value');
+const $lumValue       = document.getElementById('lum-value');
+const $colorPresetBtns = document.querySelectorAll('.color-preset-btn');
 
 const specCtx = $specCanvas.getContext('2d');
 
@@ -110,11 +130,11 @@ function drawSpectrum() {
     const val  = data[i * step] / 255;     // normalize
     const barH = val * H;
 
-    // Color shifts from amber (bass) through yellow (mid) to warm white (high)
-    const hue  = 38 + i * 0.6;
-    const sat  = 100 - i * 0.5;
-    const lum  = 50 + i * 0.15;
-    specCtx.fillStyle = `hsla(${hue}, ${sat}%, ${lum}%, 0.85)`;
+    // Color shifts from base hue through the spectrum
+    const hueShift = (window.colorH + i * 0.6) % 360;
+    const sat  = window.colorS - i * 0.3;
+    const lum  = window.colorL + i * 0.15;
+    specCtx.fillStyle = `hsla(${hueShift}, ${sat}%, ${lum}%, 0.85)`;
 
     // Mirror: bottom half normal, top half mirrored (symmetric waveform)
     specCtx.fillRect(i * barW, H / 2 - barH / 2, Math.max(barW - 1, 1), barH);
@@ -157,6 +177,7 @@ async function handleFile(file) {
     // Transition to player UI
     $uploadScreen.classList.add('hidden');
     $controlBar.classList.remove('hidden');
+    $colorPanel.classList.remove('hidden');
     $specCanvas.classList.add('visible');
 
     // Reset playback buttons
@@ -166,7 +187,7 @@ async function handleFile(file) {
     if (!animFrameId) loop();
 
   } catch (err) {
-    console.error('[HydraVis] Error loading audio:', err);
+    console.error('[Synthestesia] Error loading audio:', err);
     showError('No se pudo decodificar el archivo. Intenta con otro formato.');
   }
 }
@@ -195,6 +216,67 @@ function setPlayState(playing) {
   $btnPlay.disabled = playing;
   $btnStop.disabled = !playing;
 }
+
+// ════════════════════════════════════════════════════════════════════
+// COLOR CONTROLS
+// ════════════════════════════════════════════════════════════════════
+function updateColorPreview() {
+  const hsl = `hsl(${window.colorH}, ${window.colorS}%, ${window.colorL}%)`;
+  $colorPreview.style.background = hsl;
+}
+
+$sliderHue.addEventListener('input', (e) => {
+  window.colorH = parseInt(e.target.value, 10);
+  $hueValue.textContent = `${window.colorH}°`;
+  updateColorPreview();
+  hydraCtrl.applyPreset(hydraCtrl.currentPreset); // Re-render with new color
+});
+
+$sliderSat.addEventListener('input', (e) => {
+  window.colorS = parseInt(e.target.value, 10);
+  $satValue.textContent = `${window.colorS}%`;
+  updateColorPreview();
+  hydraCtrl.applyPreset(hydraCtrl.currentPreset);
+});
+
+$sliderLum.addEventListener('input', (e) => {
+  window.colorL = parseInt(e.target.value, 10);
+  $lumValue.textContent = `${window.colorL}%`;
+  updateColorPreview();
+  hydraCtrl.applyPreset(hydraCtrl.currentPreset);
+});
+
+// EVA-01 Color Presets
+const evaColorPresets = {
+  'eva-purple': { h: 270, s: 85, l: 50 },
+  'lcl-green': { h: 130, s: 75, l: 45 },
+  'ui-amber': { h: 38, s: 95, l: 55 },
+  'at-cyan': { h: 190, s: 80, l: 50 },
+  'blood-red': { h: 0, s: 100, l: 45 },
+};
+
+$colorPresetBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const color = btn.dataset.color;
+    const preset = evaColorPresets[color];
+    if (preset) {
+      window.colorH = preset.h;
+      window.colorS = preset.s;
+      window.colorL = preset.l;
+      $sliderHue.value = preset.h;
+      $sliderSat.value = preset.s;
+      $sliderLum.value = preset.l;
+      $hueValue.textContent = `${preset.h}°`;
+      $satValue.textContent = `${preset.s}%`;
+      $lumValue.textContent = `${preset.l}%`;
+      updateColorPreview();
+      hydraCtrl.applyPreset(hydraCtrl.currentPreset);
+    }
+  });
+});
+
+// Initialize color preview
+updateColorPreview();
 
 // ════════════════════════════════════════════════════════════════════
 // PRESET SELECTOR
@@ -250,10 +332,10 @@ async function stopRecording() {
 
   if (url) {
     // Build a filename from the track name
-    const safeName = ($trackName.textContent || 'hydravis')
+    const safeName = ($trackName.textContent || 'synthestesia')
       .replace(/[^a-z0-9_\-]/gi, '_')
       .toLowerCase();
-    $btnDownload.download = `${safeName}_hydravis.webm`;
+    $btnDownload.download = `${safeName}_synthestesia.webm`;
     $btnDownload.href = url;
     $btnDownload.classList.remove('hidden');
   }
@@ -276,6 +358,7 @@ $btnReset.addEventListener('click', () => {
   // Reset UI
   $uploadScreen.classList.remove('hidden');
   $controlBar.classList.add('hidden');
+  $colorPanel.classList.add('hidden');
   $specCanvas.classList.remove('visible');
   $btnDownload.classList.add('hidden');
   $recIndicator.classList.add('hidden');
