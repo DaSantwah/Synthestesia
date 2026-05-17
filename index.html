@@ -42,6 +42,45 @@
     </p>
   </div>
 
+  <!-- ── COLOR CONTROL PANEL ──────────────────────────────── -->
+  <div id="color-panel" class="hidden">
+    <div class="color-panel-content">
+      <div class="color-panel-header">
+        <span class="color-title">COLOR</span>
+        <div class="color-preview" id="color-preview"></div>
+      </div>
+
+      <div class="color-sliders">
+        <div class="slider-group">
+          <label>HUE</label>
+          <input type="range" id="slider-hue" class="color-slider" min="0" max="360" value="270" />
+          <span class="slider-value" id="hue-value">270°</span>
+        </div>
+        <div class="slider-group">
+          <label>SAT</label>
+          <input type="range" id="slider-sat" class="color-slider" min="0" max="100" value="85" />
+          <span class="slider-value" id="sat-value">85%</span>
+        </div>
+        <div class="slider-group">
+          <label>LUM</label>
+          <input type="range" id="slider-lum" class="color-slider" min="0" max="100" value="50" />
+          <span class="slider-value" id="lum-value">50%</span>
+        </div>
+      </div>
+
+      <div class="color-presets">
+        <span class="presets-label">EVA-01 PRESETS</span>
+        <div class="preset-buttons">
+          <button class="color-preset-btn" data-color="eva-purple" title="EVA-01 Purple"></button>
+          <button class="color-preset-btn" data-color="lcl-green" title="LCL Green"></button>
+          <button class="color-preset-btn" data-color="ui-amber" title="NERV UI Amber"></button>
+          <button class="color-preset-btn" data-color="at-cyan" title="AT Field Cyan"></button>
+          <button class="color-preset-btn" data-color="blood-red" title="Entry Plug Red"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── CONTROL BAR ──────────────────────────────────────── -->
   <div id="control-bar" class="hidden">
 
@@ -70,6 +109,11 @@
           <button class="preset-btn" data-preset="2">03</button>
           <button class="preset-btn" data-preset="3">04</button>
           <button class="preset-btn" data-preset="4">05</button>
+          <button class="preset-btn" data-preset="5">06</button>
+          <button class="preset-btn" data-preset="6">07</button>
+          <button class="preset-btn" data-preset="7">08</button>
+          <button class="preset-btn" data-preset="8">09</button>
+          <button class="preset-btn" data-preset="9">10</button>
         </div>
       </div>
 
