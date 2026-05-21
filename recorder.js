@@ -12,11 +12,9 @@ export class VideoRecorder {
     this._blobUrl      = null;
   }
 
-  // ── Start ────────────────────────────────────────────────────────
   async start(canvas, audioStream) {
     if (this.isRecording) return;
 
-    // Release previous blob to free memory
     if (this._blobUrl) {
       URL.revokeObjectURL(this._blobUrl);
       this._blobUrl = null;
@@ -24,16 +22,12 @@ export class VideoRecorder {
 
     this.chunks = [];
 
-    // Build a MediaStream: video track from canvas + audio track from Web Audio
     const videoStream = canvas.captureStream(24);
     const tracks = [...videoStream.getVideoTracks()];
     if (audioStream) tracks.push(...audioStream.getAudioTracks());
     const combined = new MediaStream(tracks);
 
-    // Pick the best supported codec
     const mimeType = VideoRecorder._bestMimeType();
-    
-    // Bajamos el bitrate a 4 Mbps para no asfixiar el procesador
     const options  = mimeType ? { mimeType, videoBitsPerSecond: 4_000_000 } : {};
 
     this.mediaRecorder = new MediaRecorder(combined, options);
@@ -42,21 +36,13 @@ export class VideoRecorder {
       if (data && data.size > 0) this.chunks.push(data);
     };
 
-    this.mediaRecorder.start(100); // emit a chunk every 100 ms
+    this.mediaRecorder.start(100);
     this.isRecording = true;
   }
 
-  // ── Stop ─────────────────────────────────────────────────────────
-  /**
-   * Finalize recording and return a download URL.
-   * @returns {Promise<string|null>} Object URL of the recorded blob
-   */
   stop() {
     return new Promise((resolve) => {
-      if (!this.isRecording || !this.mediaRecorder) {
-        resolve(null);
-        return;
-      }
+      if (!this.isRecording || !this.mediaRecorder) { resolve(null); return; }
 
       this.mediaRecorder.onstop = () => {
         this.isRecording = false;
@@ -70,12 +56,11 @@ export class VideoRecorder {
     });
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────
   static _bestMimeType() {
     const candidates = [
-      'video/webm;codecs=h264,opus', // Prioridad 1: Mejor aceleración en hardware
-      'video/webm;codecs=vp8,opus',  // Prioridad 2: Más ligero que VP9
-      'video/webm;codecs=vp9,opus',  // Prioridad 3: Pesado, último recurso
+      'video/webm;codecs=h264,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm;codecs=vp9,opus',
       'video/webm',
       'video/mp4',
     ];
