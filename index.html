@@ -11,136 +11,265 @@
 </head>
 <body>
 
-  <canvas id="hydra-canvas"></canvas>
-
-  <canvas id="spectrum-canvas" width="480" height="56"></canvas>
-
-  <div id="upload-screen">
-    <div class="hero">
-      <div class="wordmark">SYNTH<span>ESTESIA</span></div>
-      <p class="tagline">Generador de Visuales Reactivas</p>
-    </div>
-
-    <div class="drop-zone" id="drop-zone">
-      <div class="drop-icon">
-        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 28V12M20 12L13 19M20 12L27 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
-          <path d="M8 30H32" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+  <!-- ══ PHOTOSENSITIVITY WARNING ══════════════════════════════════ -->
+  <div id="warning-screen">
+    <div class="warning-container">
+      <div class="warning-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 6L44 42H4L24 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M24 20V30" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+          <circle cx="24" cy="36" r="1.5" fill="currentColor"/>
         </svg>
       </div>
-      <p class="drop-main">Arrastra tu archivo de audio aquí</p>
-      <p class="drop-hint">MP3 · WAV · FLAC · OGG · M4A</p>
-      <span class="drop-or">— o haz clic para explorar —</span>
-      <input type="file" id="file-input" accept="audio/*" />
-    </div>
 
-    <p class="footer-note">
-      Todo el procesamiento ocurre en tu navegador · Ningún archivo se sube a servidores
-    </p>
-  </div>
+      <div class="warning-badge">ADVERTENCIA DE SALUD</div>
 
-  <div id="color-panel" class="hidden">
-    <div class="color-panel-content">
-      <div class="color-panel-header">
-        <span class="color-title">COLOR</span>
-        <div class="color-preview" id="color-preview"></div>
+      <h1 class="warning-title">Contenido con<br/>luces estroboscópicas</h1>
+
+      <div class="warning-body">
+        <p>Este programa genera <strong>efectos visuales de alta frecuencia</strong>, incluyendo destellos de luz, patrones parpadeantes y contrastes abruptos que cambian rápidamente.</p>
+
+        <div class="warning-risk-box">
+          <div class="risk-row">
+            <span class="risk-dot red"></span>
+            <span>Personas con <strong>epilepsia fotosensible</strong> o historial de convulsiones</span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-dot amber"></span>
+            <span>Personas con <strong>migraña, mareo o sensibilidad a la luz</strong></span>
+          </div>
+          <div class="risk-row">
+            <span class="risk-dot amber"></span>
+            <span>Personas con <strong>trastornos visuales o neurológicos</strong></span>
+          </div>
+        </div>
+
+        <p class="warning-note">Aproximadamente 1 de cada 4,000 personas puede experimentar convulsiones ante estímulos visuales. Si experimentas mareo, visión borrosa o malestar, <strong>detén el uso inmediatamente</strong>.</p>
+
+        <p class="warning-consult">Si tienes dudas sobre tu sensibilidad, consulta a un médico antes de continuar.</p>
       </div>
 
-      <div class="color-sliders">
-        <div class="slider-group">
-          <label>HUE</label>
-          <input type="range" id="slider-hue" class="color-slider" min="0" max="360" value="270" />
-          <span class="slider-value" id="hue-value">270°</span>
-        </div>
-        <div class="slider-group">
-          <label>SAT</label>
-          <input type="range" id="slider-sat" class="color-slider" min="0" max="100" value="85" />
-          <span class="slider-value" id="sat-value">85%</span>
-        </div>
-        <div class="slider-group">
-          <label>LUM</label>
-          <input type="range" id="slider-lum" class="color-slider" min="0" max="100" value="50" />
-          <span class="slider-value" id="lum-value">50%</span>
-        </div>
-      </div>
-
-      <div class="color-presets">
-        <span class="presets-label">EVA-01 PRESETS</span>
-        <div class="preset-buttons">
-          <button class="color-preset-btn" data-color="eva-purple" title="EVA-01 Purple"></button>
-          <button class="color-preset-btn" data-color="lcl-green" title="LCL Green"></button>
-          <button class="color-preset-btn" data-color="ui-amber" title="NERV UI Amber"></button>
-          <button class="color-preset-btn" data-color="at-cyan" title="AT Field Cyan"></button>
-          <button class="color-preset-btn" data-color="blood-red" title="Entry Plug Red"></button>
-        </div>
+      <div class="warning-actions">
+        <button id="btn-warning-accept" class="warning-btn-accept">
+          Entiendo los riesgos — Continuar
+        </button>
+        <a href="https://www.epilepsy.com/causes/seizure-triggers/photosensitivity" 
+           target="_blank" rel="noopener" class="warning-btn-info">
+          Más información sobre fotosensibilidad ↗
+        </a>
       </div>
     </div>
   </div>
 
-  <div id="control-bar" class="hidden">
+  <!-- ══ MAIN APP (hidden until warning accepted) ══════════════════ -->
+  <div id="app" class="hidden">
 
-    <div class="cb-left">
-      <div class="track-meta">
-        <span id="track-name">Sin título</span>
-        <span id="track-time">0:00 / 0:00</span>
+    <canvas id="hydra-canvas"></canvas>
+    <canvas id="spectrum-canvas" width="480" height="56"></canvas>
+
+    <!-- ── Upload Screen ──────────────────────────────────────────── -->
+    <div id="upload-screen">
+      <div class="hero">
+        <div class="wordmark">SYNTH<span>ESTESIA</span></div>
+        <p class="tagline">Generador de Visuales Reactivas</p>
       </div>
-    </div>
 
-    <div class="cb-center">
-      <button id="btn-play" class="icon-btn" title="Play / Reproducir">
-        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l12 6-12 6V4z"/></svg>
-      </button>
-      <button id="btn-stop" class="icon-btn" title="Stop">
-        <svg viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="4" width="12" height="12"/></svg>
-      </button>
-    </div>
-
-    <div class="cb-right">
-      <div class="preset-group">
-        <span class="group-label">PRESET</span>
-        <div class="preset-row">
-          <button class="preset-btn active" data-preset="0">01</button>
-          <button class="preset-btn" data-preset="1">02</button>
-          <button class="preset-btn" data-preset="2">03</button>
-          <button class="preset-btn" data-preset="3">04</button>
-          <button class="preset-btn" data-preset="4">05</button>
-          <button class="preset-btn" data-preset="5">06</button>
-          <button class="preset-btn" data-preset="6">07</button>
-          <button class="preset-btn" data-preset="7">08</button>
-          <button class="preset-btn" data-preset="8">09</button>
-          <button class="preset-btn" data-preset="9">10</button>
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 28V12M20 12L13 19M20 12L27 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+            <path d="M8 30H32" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+          </svg>
         </div>
+        <p class="drop-main">Arrastra tu archivo de audio aquí</p>
+        <p class="drop-hint">MP3 · WAV · FLAC · OGG · M4A · AAC · OPUS · MP4</p>
+        <span class="drop-or">— o haz clic para explorar —</span>
+        <input type="file" id="file-input" accept="audio/*" />
       </div>
 
-      <div class="divider"></div>
-
-      <button id="btn-record" class="rec-btn">
-        <span class="rec-dot-icon"></span>
-        <span id="rec-label">REC</span>
-      </button>
-
-     <a id="btn-download" class="dl-btn hidden" download="synthestesia.webm">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="square">
-          <path d="M8 2v8M5 7l3 3 3-3M2 13h12"/>
+      <button id="btn-mic-start" class="mic-start-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0M12 19v3M9 22h6"/>
         </svg>
-        DESCARGAR
-      </a>
-
-      <button id="btn-toggle-color" class="icon-btn" title="Ajustes de Color">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03444 19.1759 5.09451 19.4353 5.01186 19.6733C4.82902 20.2001 4.50942 21.159 4.11373 21.8021C3.99309 21.9984 4.15949 22.2359 4.38446 22.1856C5.33418 21.9735 6.64161 21.5794 7.37893 21.2464C7.57564 21.1576 7.80415 21.1891 7.97157 21.3259C9.18243 21.7645 10.5113 22 12 22Z"/>
-        </svg>
+        Usar micrófono en vivo
       </button>
 
-      <button id="btn-reset" class="reset-btn" title="Cargar nuevo archivo">✕</button>
+      <p class="footer-note">Todo el procesamiento ocurre en tu navegador · Ningún archivo se sube a servidores</p>
     </div>
-  </div>
 
-  <div id="rec-indicator" class="hidden">
-    <span class="pulse-dot"></span>REC
-  </div>
+    <!-- ── Color Panel ────────────────────────────────────────────── -->
+    <div id="color-panel" class="hidden">
+      <div class="color-panel-content">
+        <div class="color-panel-header">
+          <span class="color-title">COLOR</span>
+          <div class="color-preview" id="color-preview"></div>
+        </div>
+        <div class="color-sliders">
+          <div class="slider-group">
+            <label>HUE</label>
+            <input type="range" id="slider-hue" class="color-slider" min="0" max="360" value="270" />
+            <span class="slider-value" id="hue-value">270°</span>
+          </div>
+          <div class="slider-group">
+            <label>SAT</label>
+            <input type="range" id="slider-sat" class="color-slider" min="0" max="100" value="85" />
+            <span class="slider-value" id="sat-value">85%</span>
+          </div>
+          <div class="slider-group">
+            <label>LUM</label>
+            <input type="range" id="slider-lum" class="color-slider" min="0" max="100" value="50" />
+            <span class="slider-value" id="lum-value">50%</span>
+          </div>
+        </div>
+        <div class="color-presets">
+          <span class="presets-label">EVA-01 PRESETS</span>
+          <div class="preset-buttons">
+            <button class="color-preset-btn" data-color="eva-purple" title="EVA-01 Purple"></button>
+            <button class="color-preset-btn" data-color="lcl-green" title="LCL Green"></button>
+            <button class="color-preset-btn" data-color="ui-amber" title="NERV UI Amber"></button>
+            <button class="color-preset-btn" data-color="at-cyan" title="AT Field Cyan"></button>
+            <button class="color-preset-btn" data-color="blood-red" title="Entry Plug Red"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Custom Preset Panel ────────────────────────────────────── -->
+    <div id="custom-preset-panel" class="hidden">
+      <div class="cp-header">
+        <span class="cp-title">HYDRA LIVE CODE</span>
+        <button id="btn-cp-close" class="cp-close">✕</button>
+      </div>
+      <div class="cp-hint">Variables: <code>audioBass</code> · <code>audioMid</code> · <code>audioHigh</code> · <code>audioVol</code> · <code>colorH</code> · <code>colorS</code> · <code>colorL</code></div>
+      <textarea id="custom-preset-code" spellcheck="false" placeholder="// Escribe código Hydra aquí...
+// Ejemplo:
+osc(() => audioBass * 40, 0.1, () => audioHigh * 3)
+  .color(() => colorH/360, () => colorS/100, () => colorL/100)
+  .kaleid(4)
+  .out(o0);"></textarea>
+      <div class="cp-actions">
+        <button id="btn-cp-run" class="cp-run-btn">▶ EJECUTAR</button>
+        <span id="cp-error" class="cp-error hidden"></span>
+      </div>
+    </div>
+
+    <!-- ── Control Bar ────────────────────────────────────────────── -->
+    <div id="control-bar" class="hidden">
+
+      <!-- Seek bar -->
+      <div id="seek-bar-container">
+        <div id="seek-bar-track">
+          <div id="seek-bar-fill"></div>
+          <input type="range" id="seek-bar" min="0" max="1000" value="0" step="1" />
+        </div>
+      </div>
+
+      <div class="cb-row">
+        <div class="cb-left">
+          <div class="track-meta">
+            <span id="track-name">Sin título</span>
+            <span id="track-time">0:00 / 0:00</span>
+          </div>
+          <!-- Mic indicator -->
+          <div id="mic-indicator" class="hidden">
+            <span class="mic-dot"></span>
+            <span>MIC LIVE</span>
+          </div>
+        </div>
+
+        <div class="cb-center">
+          <button id="btn-play" class="icon-btn" title="Play">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l12 6-12 6V4z"/></svg>
+          </button>
+          <button id="btn-stop" class="icon-btn" title="Stop">
+            <svg viewBox="0 0 20 20" fill="currentColor"><rect x="4" y="4" width="12" height="12"/></svg>
+          </button>
+        </div>
+
+        <div class="cb-right">
+          <div class="preset-group">
+            <span class="group-label">PRESET</span>
+            <div class="preset-row">
+              <button class="preset-btn active" data-preset="0">01</button>
+              <button class="preset-btn" data-preset="1">02</button>
+              <button class="preset-btn" data-preset="2">03</button>
+              <button class="preset-btn" data-preset="3">04</button>
+              <button class="preset-btn" data-preset="4">05</button>
+              <button class="preset-btn" data-preset="5">06</button>
+              <button class="preset-btn" data-preset="6">07</button>
+              <button class="preset-btn" data-preset="7">08</button>
+              <button class="preset-btn" data-preset="8">09</button>
+              <button class="preset-btn" data-preset="9">10</button>
+              <button class="preset-btn" data-preset="10">11</button>
+              <button class="preset-btn" data-preset="11">12</button>
+              <button class="preset-btn" data-preset="12">13</button>
+              <button class="preset-btn" data-preset="13">14</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Frame export -->
+          <button id="btn-snapshot" class="icon-btn" title="Exportar frame PNG">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <rect x="2" y="5" width="16" height="12" rx="1"/>
+              <circle cx="10" cy="11" r="3"/>
+              <path d="M7 5l1.5-2h3L13 5"/>
+            </svg>
+          </button>
+
+          <!-- MIDI -->
+          <button id="btn-midi" class="icon-btn" title="Conectar MIDI">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <rect x="2" y="7" width="16" height="8" rx="1"/>
+              <path d="M5 7V5M8 7V4M11 7V5M14 7V4M17 7V5"/>
+            </svg>
+          </button>
+
+          <!-- Live code editor -->
+          <button id="btn-custom-preset" class="icon-btn" title="Editor de código Hydra">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <path d="M6 7l-4 3 4 3M14 7l4 3-4 3M11 4l-2 12"/>
+            </svg>
+          </button>
+
+          <button id="btn-record" class="rec-btn">
+            <span class="rec-dot-icon"></span>
+            <span id="rec-label">REC</span>
+          </button>
+
+          <a id="btn-download" class="dl-btn hidden" download="synthestesia.webm">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="square">
+              <path d="M8 2v8M5 7l3 3 3-3M2 13h12"/>
+            </svg>
+            DESCARGAR
+          </a>
+
+          <button id="btn-toggle-color" class="icon-btn" title="Ajustes de Color">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/>
+              <circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/>
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+            </svg>
+          </button>
+
+          <button id="btn-reset" class="reset-btn" title="Cargar nuevo archivo">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="rec-indicator" class="hidden">
+      <span class="pulse-dot"></span>REC
+    </div>
+
+    <div id="midi-indicator" class="hidden">
+      <span class="midi-dot"></span>MIDI
+    </div>
+
+  </div><!-- /#app -->
 
   <script src="https://unpkg.com/hydra-synth"></script>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
