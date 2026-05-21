@@ -1,104 +1,144 @@
 /**
  * AudioAnalyzer
  * Wraps the Web Audio API to:
- *  - Load and decode audio files
+ *  - Load and decode audio files (expanded format support)
+ *  - Accept live microphone input
  *  - Run FFT analysis every frame
  *  - Expose smoothed frequency bands: bass / mid / high / overall
+ *    + sub / low-mid / presence / brilliance (extended bands)
+ *  - Expose seek functionality
  *  - Provide a MediaStream output for recording (audio + video sync)
  */
 export class AudioAnalyzer {
   constructor() {
     this.audioContext     = null;
     this.analyser         = null;
-    this.source           = null;        // AudioBufferSourceNode (current)
-    this.audioBuffer      = null;        // Decoded PCM data
-    this.mediaStreamDest  = null;        // For recording
+    this.source           = null;
+    this.audioBuffer      = null;
+    this.mediaStreamDest  = null;
+    this.micStream        = null;       // raw getUserMedia stream (to stop tracks)
 
     this.dataArray        = null;
     this.bufferLength     = 0;
 
-    // Normalized frequency band energies [0, 1] — smoothed
+    // ── Core bands [0, 1] smoothed ──────────────────────────────────
     this.bass    = 0;
     this.mid     = 0;
     this.high    = 0;
     this.overall = 0;
 
-    // Exponential smoothing factor (higher = more sluggish / cinematic)
+    // ── Extended bands [0, 1] smoothed ─────────────────────────────
+    this.sub       = 0;   // 20 – 80 Hz    (deep sub, 808s)
+    this.lowMid    = 0;   // 250 – 800 Hz  (body, warmth)
+    this.presence  = 0;   // 2k – 6k Hz    (attack, clarity)
+    this.brilliance= 0;   // 6k – 20k Hz   (air, shimmer)
+
     this.SMOOTH  = 0.80;
 
     // Playback state
-    this.isPlaying   = false;
-    this.duration    = 0;
-    this._startedAt  = 0;   // audioContext.currentTime when playback began
-    this._startOffset = 0;  // where in the buffer we started from
+    this.isPlaying    = false;
+    this.isMic        = false;
+    this.duration     = 0;
+    this._startedAt   = 0;
+    this._startOffset = 0;
   }
 
   // ── Init ────────────────────────────────────────────────────────
   async init() {
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // AnalyserNode — FFT window
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 2048;
     this.analyser.smoothingTimeConstant = 0.75;
     this.bufferLength = this.analyser.frequencyBinCount; // 1024 bins
     this.dataArray    = new Uint8Array(this.bufferLength);
 
-    // Routing: analyser → speakers
     this.analyser.connect(this.audioContext.destination);
 
-    // Routing: analyser → recording stream (without double-playing)
     this.mediaStreamDest = this.audioContext.createMediaStreamDestination();
     this.analyser.connect(this.mediaStreamDest);
   }
 
   // ── File Loading ────────────────────────────────────────────────
-  /**
-   * @param {File} file - Audio file selected by user
-   * @returns {number} Duration in seconds
-   */
   async loadFile(file) {
     if (!this.audioContext) await this.init();
+    await this._stopMic();
+    this._stopSource();
 
-    this._stopSource(); // clean up any previous playback
-
-    const arrayBuffer  = await file.arrayBuffer();
-    this.audioBuffer   = await this.audioContext.decodeAudioData(arrayBuffer);
-    this.duration      = this.audioBuffer.duration;
+    const arrayBuffer = await file.arrayBuffer();
+    this.audioBuffer  = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.duration     = this.audioBuffer.duration;
+    this.isMic        = false;
     return this.duration;
   }
 
+  // ── Microphone Input ────────────────────────────────────────────
+  async initMic() {
+    if (!this.audioContext) await this.init();
+    this._stopSource();
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    });
+    this.micStream = stream;
+
+    const micSource = this.audioContext.createMediaStreamSource(stream);
+    micSource.connect(this.analyser);
+
+    // Store as source so stopMic can clean it up
+    this.source    = micSource;
+    this.isMic     = true;
+    this.isPlaying = true;
+    this.duration  = 0;
+    return true;
+  }
+
+  async _stopMic() {
+    if (this.micStream) {
+      this.micStream.getTracks().forEach(t => t.stop());
+      this.micStream = null;
+    }
+    this.isMic = false;
+  }
+
   // ── Playback ────────────────────────────────────────────────────
-  /**
-   * Start playback from the beginning.
-   * @param {Function} [onEnded] - Called when audio finishes naturally
-   */
   play(onEnded) {
     if (!this.audioBuffer || this.isPlaying) return;
     this._createAndStart(0, onEnded);
   }
 
-  /**
-   * Restart playback from the very beginning (used by recorder).
-   * @param {Function} [onEnded]
-   */
   replay(onEnded) {
     this._stopSource();
     this._createAndStart(0, onEnded);
   }
 
-  stop() {
+  /**
+   * Seek to a position in seconds.
+   * Re-creates the AudioBufferSourceNode from the new offset.
+   */
+  seek(seconds, onEnded) {
+    if (!this.audioBuffer || this.isMic) return;
+    const wasPlaying = this.isPlaying;
     this._stopSource();
+    if (wasPlaying) {
+      this._createAndStart(Math.max(0, Math.min(seconds, this.duration)), onEnded);
+    } else {
+      this._startOffset = seconds;
+    }
   }
 
-  /** Current playback position in seconds */
+  stop() {
+    this._stopSource();
+    if (this.isMic) this._stopMic();
+  }
+
   get currentTime() {
-    if (!this.isPlaying) return 0;
+    if (!this.isPlaying || this.isMic) return 0;
     const elapsed = this.audioContext.currentTime - this._startedAt;
     return Math.min(this._startOffset + elapsed, this.duration);
   }
 
-  // ── FFT Update (call every animation frame) ─────────────────────
+  // ── FFT Update ──────────────────────────────────────────────────
   update() {
     if (!this.analyser) return;
     this.analyser.getByteFrequencyData(this.dataArray);
@@ -107,22 +147,27 @@ export class AudioAnalyzer {
     const rawMid   = this._bandAvg(250,  2000);
     const rawHigh  = this._bandAvg(2000, 20000);
 
+    // Extended bands
+    const rawSub        = this._bandAvg(20,   80);
+    const rawLowMid     = this._bandAvg(250,  800);
+    const rawPresence   = this._bandAvg(2000, 6000);
+    const rawBrilliance = this._bandAvg(6000, 20000);
+
     const s = this.SMOOTH;
-    this.bass    = s * this.bass    + (1 - s) * rawBass;
-    this.mid     = s * this.mid     + (1 - s) * rawMid;
-    this.high    = s * this.high    + (1 - s) * rawHigh;
-    this.overall = (this.bass + this.mid + this.high) / 3;
+    this.bass       = s * this.bass       + (1 - s) * rawBass;
+    this.mid        = s * this.mid        + (1 - s) * rawMid;
+    this.high       = s * this.high       + (1 - s) * rawHigh;
+    this.overall    = (this.bass + this.mid + this.high) / 3;
+
+    this.sub        = s * this.sub        + (1 - s) * rawSub;
+    this.lowMid     = s * this.lowMid     + (1 - s) * rawLowMid;
+    this.presence   = s * this.presence   + (1 - s) * rawPresence;
+    this.brilliance = s * this.brilliance + (1 - s) * rawBrilliance;
   }
 
-  /** Full spectrum array (Uint8Array, length = 1024) for waveform drawing */
-  getFullSpectrum() {
-    return this.dataArray;
-  }
+  getFullSpectrum() { return this.dataArray; }
 
-  /** MediaStream that carries the audio — merged with video for recording */
-  getAudioStream() {
-    return this.mediaStreamDest?.stream ?? null;
-  }
+  getAudioStream() { return this.mediaStreamDest?.stream ?? null; }
 
   // ── Private Helpers ─────────────────────────────────────────────
   _createAndStart(offset = 0, onEnded = null) {
@@ -144,8 +189,11 @@ export class AudioAnalyzer {
   }
 
   _stopSource() {
-    if (this.source) {
+    if (this.source && !this.isMic) {
       try { this.source.stop(); } catch (_) {}
+      try { this.source.disconnect(); } catch (_) {}
+      this.source = null;
+    } else if (this.source && this.isMic) {
       try { this.source.disconnect(); } catch (_) {}
       this.source = null;
     }
@@ -154,16 +202,11 @@ export class AudioAnalyzer {
     this._startedAt   = 0;
   }
 
-  /**
-   * Average energy of a frequency band, normalized [0, 1].
-   * @param {number} startHz
-   * @param {number} endHz
-   */
   _bandAvg(startHz, endHz) {
+    if (!this.audioContext) return 0;
     const nyquist  = this.audioContext.sampleRate / 2;
     const startBin = Math.max(0, Math.floor(startHz / nyquist * this.bufferLength));
     const endBin   = Math.min(this.bufferLength - 1, Math.ceil(endHz / nyquist * this.bufferLength));
-
     let sum = 0;
     for (let i = startBin; i <= endBin; i++) sum += this.dataArray[i];
     return sum / ((endBin - startBin + 1) * 255);
