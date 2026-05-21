@@ -38,9 +38,9 @@ window.colorS = 85;
 window.colorL = 50;
 
 // ── Module instances ────────────────────────────────────────────────
-const analyzer  = new AudioAnalyzer();
-const hydraCtrl = new HydraController();
-const recorder  = new VideoRecorder();
+let analyzer;
+let hydraCtrl;
+let recorder;
 
 // ── DOM refs ────────────────────────────────────────────────────────
 const $warningScreen   = document.getElementById('warning-screen');
@@ -100,6 +100,12 @@ $btnWarningAccept.addEventListener('click', () => {
   setTimeout(() => {
     $warningScreen.style.display = 'none';
     $app.classList.remove('hidden');
+    
+    // Instanciar aquí para evitar bloqueos de autoplay
+    analyzer  = new AudioAnalyzer();
+    hydraCtrl = new HydraController();
+    recorder  = new VideoRecorder();
+    
     initHydra();
   }, 600);
 });
