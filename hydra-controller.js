@@ -2,21 +2,34 @@
  * HydraController
  *
  * Manages Hydra Synth initialization and audio-reactive preset switching.
- * 14 presets total + smooth transition blend on preset change.
- *
- * Audio globals (written by app.js, read here as lambdas):
- *   audioBass / audioMid / audioHigh / audioVol
- *   audioSub / audioLowMid / audioPresence / audioBrilliance  (extended)
- *
- * Color globals:
- *   colorH [0,360] / colorS [0,100] / colorL [0,100]
+ * 14 presets total with smooth, ethereal, psychedelic liquid vibes.
  */
+
+// Función traductora: Convierte el HSL de tu interfaz a RGB para Hydra
+function hsl2rgb(h, s, l) {
+  s /= 100; 
+  l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [f(0), f(8), f(4)];
+}
+
 export class HydraController {
   constructor() {
     this.hydra         = null;
     this.currentPreset = 0;
     this.numPresets    = 14;
-    this._transitioning = false;
+  }
+
+  // ── Helper de Color ──────────────────────────────────────────────
+  // Aplica el color global RGB a Hydra y lo modula con el audio
+  _c(modFunc = () => 1) {
+    return [
+      () => hsl2rgb(window.colorH, window.colorS, window.colorL)[0] * modFunc(),
+      () => hsl2rgb(window.colorH, window.colorS, window.colorL)[1] * modFunc(),
+      () => hsl2rgb(window.colorH, window.colorS, window.colorL)[2] * modFunc()
+    ];
   }
 
   // ── Init ─────────────────────────────────────────────────────────
@@ -36,135 +49,79 @@ export class HydraController {
     if (this.hydra) this.hydra.setResolution(w, h);
   }
 
-  // ── Preset Switcher with Blend Transition ─────────────────────────
+  // ── Preset Switcher ──────────────────────────────────────────────
   applyPreset(index) {
     this.currentPreset = ((index % this.numPresets) + this.numPresets) % this.numPresets;
 
     const presets = [
-      this._p1_pulse,
-      this._p2_spectral,
-      this._p3_fractal,
-      this._p4_vortex,
-      this._p5_crystal,
-      this._p6_evaSyncWaves,
-      this._p7_armoredWave,
-      this._p8_neuralGrid,
-      this._p9_berserkCore,
-      this._p10_etherealBloom,
-      this._p11_feedbackLoop,
-      this._p12_glitchScan,
-      this._p13_lissajous,
-      this._p14_warpField,
+      this._p1_liquidPulse,
+      this._p2_psychedelicTide,
+      this._p3_astralGeometry,
+      this._p4_porcaroCascades,
+      this._p5_etherealBloom,
+      this._p6_evaSyncWaves,     // <--- El intocable
+      this._p7_lclEcho,
+      this._p8_neonWake,
+      this._p9_deepCurrent,
+      this._p10_dreamScan,
+      this._p11_velvetShift,
+      this._p12_silkPhase,
+      this._p13_gentleVortex,
+      this._p14_timeWarp,
     ];
 
     presets[this.currentPreset].call(this);
   }
 
-  // ── PRESET 01 · Pulse ─────────────────────────────────────────────
-  _p1_pulse() {
-    osc(
-      () => audioBass * 42 + 4,
-      0.1,
-      () => audioHigh * 5 + 0.5
-    )
-    .color(
-      () => (colorH / 360) * audioBass * 2.2,
-      () => (colorS / 100) * audioMid * 0.9,
-      () => (colorL / 100) * audioHigh * 2.8
-    )
-    .modulate(noise(() => audioMid * 3.5, 0.35), () => audioBass * 0.38)
-    .kaleid(4)
-    .rotate(() => audioVol * 0.45, 0.018)
-    .out(o0);
+  // ── PRESET 01 · Liquid Pulse ──────────────────────────────────────
+  _p1_liquidPulse() {
+    osc(() => audioLowMid * 8 + 4, 0.03, () => audioHigh * 1.5)
+      .modulate(noise(() => audioBass * 2 + 1, 0.03), () => audioMid * 0.5 + 0.2)
+      .colorama(() => audioBrilliance * 0.1)
+      .color(...this._c(() => 0.5 + audioMid * 0.5))
+      .rotate(() => audioVol * 0.3, 0.005)
+      .out(o0);
   }
 
-  // ── PRESET 02 · Spectral ──────────────────────────────────────────
-  _p2_spectral() {
-    voronoi(
-      () => audioMid * 28 + 5,
-      () => audioHigh * 0.4 + 0.05,
-      () => audioBass * 4
-    )
-    .color(
-      () => (colorH / 360) * audioHigh * 2.5,
-      () => (colorS / 100) * audioMid * 1.8,
-      () => (colorL / 100) * audioBass * 3.2
-    )
-    .diff(
-      osc(() => audioBass * 38, 0.04, () => audioHigh * 2.2)
-      .rotate(() => audioMid * Math.PI * 2)
-    )
-    .out(o0);
+  // ── PRESET 02 · Psychedelic Tide ──────────────────────────────────
+  _p2_psychedelicTide() {
+    voronoi(() => audioMid * 5 + 3, 0.02, () => audioHigh * 1.5)
+      .modulateRotate(osc(() => audioBass * 5 + 2).rotate(() => audioLowMid * 2), () => audioBass * 0.4)
+      .kaleid(3)
+      .color(...this._c(() => 0.6 + audioBass * 0.4))
+      .blend(noise(2, 0.01), 0.05)
+      .out(o0);
   }
 
-  // ── PRESET 03 · Fractal ───────────────────────────────────────────
-  _p3_fractal() {
-    noise(
-      () => audioBass * 4.5 + 1.2,
-      () => audioMid * 0.4
-    )
-    .mult(
-      osc(() => audioHigh * 52 + 8, 0.05, 0)
-      .rotate(() => audioMid * 3.2)
-    )
-    .color(
-      () => (colorH / 360) * audioBass * 2.8,
-      () => (colorS / 100) * audioHigh * 3.2,
-      () => (colorL / 100) * audioMid * 1.6
-    )
-    .kaleid(() => Math.round(audioBass * 7) + 3)
-    .rotate(() => audioVol * 2.2, 0.008)
-    .out(o0);
+  // ── PRESET 03 · Astral Geometry ───────────────────────────────────
+  _p3_astralGeometry() {
+    shape(4, () => 0.4 + audioHigh * 0.1, 0.02)
+      .modulate(noise(() => audioBass * 3 + 1, 0.02))
+      .kaleid(() => Math.round(audioMid * 3) + 2)
+      .color(...this._c(() => 0.5 + audioVol * 0.5))
+      .rotate(() => audioLowMid * 0.5, 0.01)
+      .out(o0);
   }
 
-  // ── PRESET 04 · Vortex ────────────────────────────────────────────
-  _p4_vortex() {
-    osc(() => audioHigh * 62 + 12, 0.02, () => audioBass * 3.5)
-    .rotate(() => audioVol * Math.PI)
-    .modulateRotate(
-      osc(() => audioMid * 22).rotate(() => audioBass * 1.6),
-      () => audioBass * 1.3
-    )
-    .color(
-      () => (colorH / 360) * audioHigh * 2.2,
-      () => (colorS / 100) * audioBass * 1.6,
-      () => (colorL / 100) * audioMid * 2.8
-    )
-    .add(
-      osc(() => audioBass * 22, 0.1)
-      .color(
-        () => (colorH / 360) * audioMid * 0.8,
-        0,
-        () => (colorL / 100) * audioHigh * 2.4
-      ),
-      () => audioVol * 0.42
-    )
-    .out(o0);
+  // ── PRESET 04 · Porcaro Cascades ──────────────────────────────────
+  _p4_porcaroCascades() {
+    osc(() => audioMid * 12 + 8, 0.015, () => audioHigh * 1.5)
+      .modulateScale(noise(() => audioBass * 1.5 + 0.5, 0.02), () => audioLowMid * 0.4 + 0.1)
+      .color(...this._c(() => 0.6 + audioHigh * 0.4))
+      .mult(osc(8, 0.01).rotate(() => audioVol * 0.15))
+      .out(o0);
   }
 
-  // ── PRESET 05 · Crystal ───────────────────────────────────────────
-  _p5_crystal() {
-    shape(
-      () => Math.round(audioMid * 4) + 3,
-      () => audioBass * 0.72 + 0.12,
-      0.008
-    )
-    .modulate(noise(() => audioHigh * 3.2))
-    .color(
-      () => (colorH / 360) * audioMid * 3.8,
-      () => (colorS / 100) * audioBass * 0.6,
-      () => (colorL / 100) * audioHigh * 2.8
-    )
-    .add(
-      osc(() => audioBass * 85, 0.08, () => audioHigh * 2.2)
-      .rotate(() => audioMid * Math.PI),
-      () => audioVol * 0.55
-    )
-    .kaleid(() => Math.round(audioHigh * 4) + 2)
-    .out(o0);
+  // ── PRESET 05 · Ethereal Bloom ────────────────────────────────────
+  _p5_etherealBloom() {
+    noise(() => audioSub * 2 + 1, 0.02)
+      .modulate(voronoi(() => audioMid * 4 + 2, 0.03), () => audioBass * 0.5)
+      .colorama(() => audioBrilliance * 0.15)
+      .color(...this._c(() => 0.5 + audioLowMid * 0.5))
+      .out(o0);
   }
 
-  // ── PRESET 06 · EVA Sync Waves ─────────────────────────────────────
+  // ── PRESET 06 · EVA Sync Waves (El original, pero con color fijo) ─
   _p6_evaSyncWaves() {
     osc(
       () => audioMid * 35 + 6,
@@ -175,195 +132,104 @@ export class HydraController {
       osc(() => audioMid * 18).rotate(() => audioBass * 2.2),
       () => audioBass * 0.8
     )
-    .color(
-      () => (colorH / 360) * audioHigh * 2.4,
-      () => (colorS / 100) * audioMid * 1.2,
-      () => (colorL / 100) * (0.4 + audioBass * 0.6)
-    )
-    .mult(noise(() => audioMid * 2.8, 0.25))
+    // Conserva los multiplicadores bajos originales, pero usando HSL real
+    .color(...this._c(() => 0.4 + (audioBass + audioMid) * 0.5))
+    .mult(noise(() => audioMid * 2.8, 0.02))
     .kaleid(() => Math.round(audioHigh * 5) + 2)
     .out(o0);
   }
 
-  // ── PRESET 07 · Armored Wave ───────────────────────────────────────
-  _p7_armoredWave() {
-    osc(() => audioHigh * 48 + 10, 0.08, () => audioBass * 2.8)
-    .rotate(() => audioVol * 1.8, 0.012)
-    .modulateScale(
-      voronoi(() => audioMid * 22, () => audioHigh * 0.35),
-      () => 1 + audioMid * 0.5
-    )
-    .color(
-      () => (colorH / 360) * (1 + audioHigh * 0.8),
-      () => (colorS / 100) * (0.6 + audioMid * 0.4),
-      () => (colorL / 100) * (0.5 + audioVol * 0.3)
-    )
-    .out(o0);
+  // ── PRESET 07 · LCL Echo (Feedback Acuático) ──────────────────────
+  _p7_lclEcho() {
+    src(o0)
+      .scale(() => 1 - audioBass * 0.01)
+      .rotate(() => audioMid * 0.01, 0.002)
+      .blend(
+        shape(4, () => 0.4 + audioHigh * 0.2, 0.08)
+          .modulate(osc(() => audioBass * 6 + 2, 0.02), 0.3)
+          .color(...this._c(() => audioVol * 1.2))
+          .scrollX(() => audioLowMid * 0.02),
+        () => 0.1 + audioHigh * 0.15
+      )
+      .out(o0);
   }
 
-  // ── PRESET 08 · Neural Grid ────────────────────────────────────────
-  _p8_neuralGrid() {
-    voronoi(
-      () => audioMid * 32 + 8,
-      () => audioHigh * 0.5 + 0.08,
-      () => audioBass * 5.2
-    )
-    .color(
-      () => ((colorH + audioHigh * 120) / 360) % 1,
-      () => (colorS / 100) * (0.7 + audioMid * 0.3),
-      () => (colorL / 100) * (0.45 + audioVol * 0.35)
-    )
-    .modulateRotate(
-      osc(() => audioBass * 45).rotate(() => audioMid * 3),
-      () => audioMid * 0.6
-    )
-    .out(o0);
+  // ── PRESET 08 · Neon Wake ─────────────────────────────────────────
+  _p8_neonWake() {
+    voronoi(() => audioHigh * 6 + 4, 0.03, () => audioMid * 2)
+      .diff(osc(() => audioBass * 10 + 5, 0.02).rotate(() => audioMid * 0.5, 0.005))
+      .kaleid(3)
+      .colorama(() => audioBrilliance * 0.08)
+      .color(...this._c(() => 0.5 + audioVol * 0.4))
+      .out(o0);
   }
 
-  // ── PRESET 09 · Berserk Core ───────────────────────────────────────
-  _p9_berserkCore() {
-    osc(() => audioHigh * 95 + 15, 0.04, () => audioBass * 4.2)
-    .rotate(() => audioVol * Math.PI * 2, 0.02)
-    .add(
-      voronoi(() => audioMid * 45, () => audioHigh * 0.6)
-      .color(
-        () => ((colorH + audioVol * 180) / 360) % 1,
-        () => Math.min(1, (colorS / 100) * 1.5 + audioHigh * 0.5),
-        () => (colorL / 100) * (0.55 + audioVol * 0.35)
-      ),
-      () => audioBass * 0.6
-    )
-    .kaleid(() => Math.round(audioMid * 6) + 2)
-    .out(o0);
+  // ── PRESET 09 · Deep Current ──────────────────────────────────────
+  _p9_deepCurrent() {
+    osc(() => audioLowMid * 10 + 5, 0.02, () => audioHigh * 0.5)
+      .modulate(osc(() => audioBass * 10).rotate(Math.PI / 2), () => audioMid * 0.3)
+      .color(...this._c(() => 0.6 + audioBass * 0.4))
+      .blend(src(o0).scale(1.02).opacity(0.8))
+      .out(o0);
   }
 
-  // ── PRESET 10 · Ethereal Bloom ─────────────────────────────────────
-  _p10_etherealBloom() {
-    osc(
-      () => audioMid * 24 + 4,
-      () => audioBass * 0.25 + 0.08,
-      () => audioHigh * 2.8
-    )
-    .modulate(noise(() => audioMid * 1.8, 0.35), () => audioVol * 0.25)
-    .color(
-      () => (colorH / 360) * (1 + audioHigh * 0.6),
-      () => (colorS / 100) * (0.55 + audioMid * 0.25),
-      () => (colorL / 100) * (0.55 + audioBass * 0.25)
-    )
-    .kaleid(3)
-    .rotate(() => audioVol * 0.8, 0.006)
-    .blend(
-      osc(() => audioHigh * 18)
+  // ── PRESET 10 · Dream Scan ────────────────────────────────────────
+  _p10_dreamScan() {
+    src(o0)
+      .scrollX(() => (audioBass - 0.5) * 0.005)
+      .scrollY(() => 0.001)
+      .modulate(osc(() => audioMid * 20 + 10, 0, () => audioBass * 0.2), () => audioBass * 0.02)
+      .blend(
+        osc(() => audioPresence * 30 + 10, 0.01)
+          .color(...this._c(() => 0.2 + audioHigh * 0.8)),
+        () => 0.1 + audioVol * 0.1
+      )
+      .out(o0);
+  }
+
+  // ── PRESET 11 · Velvet Shift ──────────────────────────────────────
+  _p11_velvetShift() {
+    noise(() => audioMid * 3 + 1, 0.015)
+      .modulateScrollY(osc(() => audioBass * 4, 0.02), () => audioLowMid * 0.2)
+      .color(...this._c(() => 0.5 + audioVol * 0.5))
+      .colorama(() => audioHigh * 0.05)
+      .out(o0);
+  }
+
+  // ── PRESET 12 · Silk Phase ────────────────────────────────────────
+  _p12_silkPhase() {
+    osc(() => audioBass * 15 + 5, 0.02, () => audioHigh * 0.2)
+      .diff(osc(() => audioMid * 15 + 5, 0.02, () => audioLowMid * 0.2))
+      .color(...this._c(() => 0.6 + audioBass * 0.4))
       .kaleid(2)
-      .color(
-        () => ((colorH + 180) / 360) % 1,
-        () => (colorS / 100) * 0.8,
-        () => (colorL / 100) * 0.6
-      ),
-      0.3
-    )
-    .out(o0);
-  }
-
-  // ── PRESET 11 · Feedback Loop ──────────────────────────────────────
-  // Reads o0 back into itself — builds and accumulates across time
-  // Starts dark, grows into its own evolving universe
-  _p11_feedbackLoop() {
-    // Seed with a gentle osc on first call; subsequent frames feed on themselves
-    src(o0)
-      .modulate(
-        noise(() => audioMid * 2.2, 0.3),
-        () => audioBass * 0.045
-      )
-      .blend(
-        osc(() => audioHigh * 28 + 3, 0.06)
-        .color(
-          () => (colorH / 360),
-          () => (colorS / 100) * 0.7,
-          () => (colorL / 100) * 0.5
-        ),
-        () => audioVol * 0.22
-      )
-      .scale(() => 1 + audioBass * 0.007)
-      .rotate(() => audioVol * 0.004, 0.003)
-      .brightness(() => -0.003)        // slow fade prevents runaway
+      .rotate(() => audioVol * 0.1, 0.005)
       .out(o0);
   }
 
-  // ── PRESET 12 · Glitch Scan ────────────────────────────────────────
-  // VHS-style horizontal scan lines + chromatic glitch on transients
-  _p12_glitchScan() {
-    src(o0)
-      .scrollX(() => (audioBass - 0.5) * 0.04)
-      .scrollY(() => 0.002)
-      .modulate(
-        osc(() => audioMid * 80 + 30, 0, () => audioBass * 0.5)
-        .pixelate(() => 2 + audioBass * 40, 2),
-        () => audioBass * 0.06
+  // ── PRESET 13 · Gentle Vortex ─────────────────────────────────────
+  _p13_gentleVortex() {
+    osc(() => audioHigh * 15 + 5, 0.02, () => audioBass * 0.5)
+      .rotate(() => audioVol * 0.2)
+      .modulateRotate(osc(() => audioMid * 10).rotate(() => audioBass * 0.5), () => audioBass * 0.2)
+      .color(...this._c(() => 0.5 + audioMid * 0.5))
+      .add(
+        osc(() => audioBass * 10, 0.02).color(...this._c(() => audioHigh * 0.5)), 
+        () => audioVol * 0.3
       )
-      .blend(
-        osc(() => audioPresence * 120 + 20, 0.01)
-        .color(
-          () => (colorH / 360),
-          0,
-          () => (colorL / 100) * audioHigh * 3
-        ),
-        () => audioVol * 0.18
-      )
-      .contrast(() => 1 + audioVol * 0.4)
-      .brightness(() => audioBass * 0.05 - 0.02)
       .out(o0);
   }
 
-  // ── PRESET 13 · Lissajous ──────────────────────────────────────────
-  // Two oscillators phase-shifted → classic Lissajous interference figures
-  // Frequency ratio driven by bass vs high creates dynamic knots
-  _p13_lissajous() {
-    osc(
-      () => audioBass * 60 + 10,
-      () => audioMid * 0.2,
-      () => audioHigh * Math.PI
-    )
-    .diff(
-      osc(
-        () => audioHigh * 60 + 10,
-        () => audioMid * 0.2,
-        () => audioBass * Math.PI + Math.PI / 2
+  // ── PRESET 14 · Time Warp ─────────────────────────────────────────
+  _p14_timeWarp() {
+    noise(() => audioSub * 1.5 + 1, 0.02)
+      .modulateScale(src(o0).scale(() => 1 + audioBass * 0.01), () => 1 + audioVol * 0.2)
+      .blend(
+        osc(() => audioHigh * 15 + 5, 0.02)
+          .color(...this._c(() => 0.4 + audioMid * 0.6))
+          .kaleid(4),
+        () => audioVol * 0.2
       )
-    )
-    .color(
-      () => (colorH / 360) * (0.5 + audioBass),
-      () => (colorS / 100) * (0.4 + audioMid * 0.8),
-      () => (colorL / 100) * (0.6 + audioHigh * 0.8)
-    )
-    .kaleid(() => Math.round(audioLowMid * 4) + 2)
-    .rotate(() => audioVol * 0.3, 0.01)
-    .out(o0);
-  }
-
-  // ── PRESET 14 · Warp Field ─────────────────────────────────────────
-  // Canvas folds back on itself — space-time distortion effect
-  // noise drives the warp depth; bass creates sudden tears
-  _p14_warpField() {
-    noise(
-      () => audioSub * 3 + 1.5,
-      () => audioMid * 0.3
-    )
-    .modulateScale(
-      src(o0).scale(() => 1 + audioBass * 0.02),
-      () => 1 + audioVol * 0.6
-    )
-    .blend(
-      osc(() => audioHigh * 35 + 5, 0.04)
-      .color(
-        () => (colorH / 360) * (1 + audioHigh * 0.5),
-        () => (colorS / 100) * (0.5 + audioMid * 0.3),
-        () => (colorL / 100) * (0.5 + audioBass * 0.3)
-      )
-      .kaleid(6),
-      () => audioVol * 0.3
-    )
-    .rotate(() => audioBass * 0.8, 0.005)
-    .out(o0);
+      .rotate(() => audioBass * 0.2, 0.002)
+      .out(o0);
   }
 }
