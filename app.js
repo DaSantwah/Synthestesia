@@ -426,13 +426,76 @@ $btnCustomPreset.addEventListener('click', () => {
 // ════════════════════════════════════════════════════════════════════
 // SCREEN SHARING (DJS LIVE SCREEN FEED IN HYDRA)
 // ════════════════════════════════════════════════════════════════════
+async function startScreenShareSession() {
+  const stream = await hydraCtrl.toggleScreenCapture();
+  if (!stream) return;
+
+  $btnScreen.classList.add('active');
+  
+  // Extraer track de audio si existe
+  const audioTracks = stream.getAudioTracks();
+  if (audioTracks.length > 0) {
+    // Si hay audio, ruteamos el stream al analizador
+    const audioStream = new MediaStream(audioTracks);
+    await analyzer.initSystemAudio(audioStream);
+    
+    $trackName.textContent = 'AUDIO DE VENTANA COMPARTIDA';
+    $trackTime.textContent = '—';
+    $seekBar.disabled = true;
+    $seekFill.style.width = '0%';
+    
+    showPlayer(true);
+    setPlayState(true);
+    
+    showToast('¡Reactividad por audio de ventana activa!');
+  } else {
+    // Si no hay audio, informamos al usuario
+    showToast('Visual de ventana activa. Sin audio de ventana (marcar "Compartir audio").');
+  }
+
+  if (!animFrameId) loop();
+
+  // Escuchar el evento final (por si cancela desde la barra flotante del navegador)
+  const videoTrack = stream.getVideoTracks()[0];
+  if (videoTrack) {
+    videoTrack.onended = () => {
+      stopScreenShareSession();
+    };
+  }
+}
+
+async function stopScreenShareSession() {
+  hydraCtrl.stopScreenCapture();
+  $btnScreen.classList.remove('active');
+  
+  // Si el analizador estaba usando el audio de la ventana compartida, volver al estado anterior
+  if (analyzer.isMic && $trackName.textContent === 'AUDIO DE VENTANA COMPARTIDA') {
+    analyzer.stop();
+    setPlayState(false);
+    
+    // Restaurar si había un archivo cargado
+    if (analyzer.audioBuffer) {
+      const name = $fileInput.files[0]?.name.replace(/\.[^.]+$/, '') || 'Archivo de audio';
+      $trackName.textContent = name.length > 32 ? name.slice(0, 30) + '…' : name;
+      $trackTime.textContent = `0:00 / ${fmt(analyzer.duration)}`;
+      showPlayer(false);
+    } else {
+      // Si no, reiniciar al estado de subida
+      $btnReset.click();
+    }
+  }
+}
+
 $btnScreen.addEventListener('click', async () => {
   try {
-    const isActive = await hydraCtrl.toggleScreenCapture();
-    $btnScreen.classList.toggle('active', isActive);
+    if (hydraCtrl.screenActive) {
+      await stopScreenShareSession();
+    } else {
+      await startScreenShareSession();
+    }
   } catch (err) {
     console.error('[Synthestesia] Screen share error:', err);
-    showError('No se pudo iniciar la captura de pantalla. Asegúrate de dar los permisos necesarios.');
+    showError('No se pudo iniciar la captura de pantalla. Asegúrate de marcar "Compartir audio" en el diálogo.');
   }
 });
 

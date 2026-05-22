@@ -127,6 +127,34 @@ export class AudioAnalyzer {
     return true;
   }
 
+  async initSystemAudio(stream) {
+    if (!this.audioContext) await this.init();
+    
+    // Asegurar que el AudioContext esté activo
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+
+    this._stopSource();
+    await this._stopMic();
+
+    // Guardar para poder detenerlo de forma limpia después
+    this.micStream = stream;
+
+    const systemAudioSource = this.audioContext.createMediaStreamSource(stream);
+    
+    // Crucial: desconectar de altavoces para que el DJ no escuche duplicado con delay
+    try { this.analyser.disconnect(this.audioContext.destination); } catch (_) {}
+    
+    systemAudioSource.connect(this.compressor);
+
+    this.source    = systemAudioSource;
+    this.isMic     = true; // Se comporta como entrada en vivo (sin barra de seek)
+    this.isPlaying = true;
+    this.duration  = 0;
+    return true;
+  }
+
   async _stopMic() {
     if (this.micStream) {
       this.micStream.getTracks().forEach(t => t.stop());

@@ -54,14 +54,40 @@ export class HydraController {
     if (this.screenActive) {
       this.stopScreenCapture();
       this.applyPreset(this.currentPreset);
-      return false;
+      return null;
     } else {
       try {
-        // Initiates browser window/screen sharing and binds to Hydra s0
-        await s0.initScreen();
+        // Solicitar de forma activa video y audio interno de la ventana/pestaña
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
+        });
+        
+        // Crear un puente de elemento video en memoria para alimentar a s0 de Hydra
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true; // Muteado para no retroalimentar sonido en las bocinas del DJ
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play().catch(e => console.error('[Synthestesia] Error reproduciendo video de pantalla:', e));
+        };
+
+        s0.init({ src: video, dynamic: true });
+        
+        this.screenStream = stream;
+        this.screenVideo = video;
         this.screenActive = true;
         this.applyPreset(this.currentPreset);
-        return true;
+        
+        return stream;
       } catch (err) {
         console.error('[Synthestesia] Screen capture initiation failed:', err);
         this.screenActive = false;
@@ -73,12 +99,17 @@ export class HydraController {
   stopScreenCapture() {
     this.screenActive = false;
     try {
-      if (s0 && s0.src && s0.src.srcObject) {
-        const stream = s0.src.srcObject;
-        if (stream && typeof stream.getTracks === 'function') {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        s0.src.srcObject = null;
+      if (this.screenStream) {
+        this.screenStream.getTracks().forEach(track => track.stop());
+        this.screenStream = null;
+      }
+      if (this.screenVideo) {
+        this.screenVideo.srcObject = null;
+        this.screenVideo.remove();
+        this.screenVideo = null;
+      }
+      if (s0 && s0.src) {
+        s0.src = null;
       }
     } catch (err) {
       console.warn('[Synthestesia] Error stopping screen tracks:', err);
