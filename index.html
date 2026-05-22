@@ -188,6 +188,14 @@ osc(() => audioBass * 40, 0.1, () => audioHigh * 3)
         </div>
 
         <div class="cb-right">
+          <!-- Sensitivity slider -->
+          <div class="sens-group">
+            <span class="group-label">SENS</span>
+            <input type="range" id="sens-slider" min="0.4" max="3.0" value="1.2" step="0.05" class="sens-slider" title="Sensibilidad de respuesta visual" />
+          </div>
+
+          <div class="divider"></div>
+
           <div class="preset-group">
             <span class="group-label">PRESET</span>
             <div class="preset-row">

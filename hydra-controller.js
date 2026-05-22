@@ -77,8 +77,9 @@ export class HydraController {
   _p1_liquidPulse() {
     osc(() => audioLowMid * 8 + 4, 0.03, () => audioHigh * 1.5)
       .modulate(noise(() => audioBass * 2 + 1, 0.03), () => audioMid * 0.5 + 0.2)
-      .colorama(() => audioBrilliance * 0.1)
-      .color(...this._c(() => 0.5 + audioMid * 0.5))
+      .colorama(() => audioBrilliance * 0.1 + audioBeat * 0.05)
+      .color(...this._c(() => 0.5 + audioMid * 0.3 + audioBeat * 0.4))
+      .scale(() => 1 + audioBeat * 0.12)
       .rotate(() => audioVol * 0.3, 0.005)
       .out(o0);
   }
@@ -124,18 +125,19 @@ export class HydraController {
   // ── PRESET 06 · EVA Sync Waves (El original, pero con color fijo) ─
   _p6_evaSyncWaves() {
     osc(
-      () => audioMid * 35 + 6,
+      () => audioMid * 35 + 6 + audioBeatMid * 10,
       () => audioBass * 0.3 + 0.1,
       () => audioHigh * 3.2
     )
     .modulateRotate(
       osc(() => audioMid * 18).rotate(() => audioBass * 2.2),
-      () => audioBass * 0.8
+      () => audioBass * 0.8 + audioBeat * 0.4
     )
-    // Conserva los multiplicadores bajos originales, pero usando HSL real
-    .color(...this._c(() => 0.4 + (audioBass + audioMid) * 0.5))
+    // Conserva los multiplicadores bajos originales, pero usando HSL real y disparador de beat
+    .color(...this._c(() => 0.4 + (audioBass + audioMid) * 0.3 + audioBeat * 0.4))
     .mult(noise(() => audioMid * 2.8, 0.02))
-    .kaleid(() => Math.round(audioHigh * 5) + 2)
+    .kaleid(() => Math.round(audioHigh * 5 + audioBeatMid * 3) + 2)
+    .scale(() => 1 - audioBeat * 0.08)
     .out(o0);
   }
 

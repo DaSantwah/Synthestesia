@@ -35,6 +35,18 @@ export class AudioAnalyzer {
 
     this.SMOOTH  = 0.80;
 
+    // Running slow averages for transient/beat detection
+    this.slowBass = 0;
+    this.slowMid  = 0;
+
+    // Beat triggers [0, 1] that decay exponentially
+    this.bassBeat = 0;
+    this.midBeat  = 0;
+
+    // Cooldown frames to prevent double triggers
+    this._bassCooldown = 0;
+    this._midCooldown  = 0;
+
     // Playback state
     this.isPlaying    = false;
     this.isMic        = false;
@@ -132,6 +144,17 @@ export class AudioAnalyzer {
     if (this.isMic) this._stopMic();
   }
 
+  unload() {
+    this._stopSource();
+    this._stopMic();
+    this.audioBuffer = null;
+    this.duration = 0;
+    this.slowBass = 0;
+    this.slowMid = 0;
+    this.bassBeat = 0;
+    this.midBeat = 0;
+  }
+
   get currentTime() {
     if (!this.isPlaying || this.isMic) return 0;
     const elapsed = this.audioContext.currentTime - this._startedAt;
@@ -143,9 +166,13 @@ export class AudioAnalyzer {
     if (!this.analyser) return;
     this.analyser.getByteFrequencyData(this.dataArray);
 
-    const rawBass  = this._bandAvg(20,   250);
-    const rawMid   = this._bandAvg(250,  2000);
-    const rawHigh  = this._bandAvg(2000, 20000);
+    // Update cooldowns
+    if (this._bassCooldown > 0) this._bassCooldown--;
+    if (this._midCooldown > 0) this._midCooldown--;
+
+    const rawBass  = this._bandAvg(20,   150);  // narrow low bass for kicks
+    const rawMid   = this._bandAvg(250,  1500); // narrow mid for snares/instrument strikes
+    const rawHigh  = this._bandAvg(1500, 20000);
 
     // Extended bands
     const rawSub        = this._bandAvg(20,   80);
@@ -163,6 +190,31 @@ export class AudioAnalyzer {
     this.lowMid     = s * this.lowMid     + (1 - s) * rawLowMid;
     this.presence   = s * this.presence   + (1 - s) * rawPresence;
     this.brilliance = s * this.brilliance + (1 - s) * rawBrilliance;
+
+    // Slow moving average to track baseline ambient level
+    if (this.slowBass === 0) this.slowBass = rawBass;
+    else this.slowBass = 0.985 * this.slowBass + 0.015 * rawBass;
+
+    if (this.slowMid === 0) this.slowMid = rawMid;
+    else this.slowMid = 0.985 * this.slowMid + 0.015 * rawMid;
+
+    // Trigger detection (Onset)
+    const bassThreshold = 1.30;
+    const midThreshold = 1.35;
+
+    if (rawBass > this.slowBass * bassThreshold && this._bassCooldown === 0 && rawBass > 0.04) {
+      this.bassBeat = 1.0;
+      this._bassCooldown = 14; // ~230ms cooldown at 60fps
+    } else {
+      this.bassBeat = Math.max(0, this.bassBeat * 0.88); // rapid exponential decay
+    }
+
+    if (rawMid > this.slowMid * midThreshold && this._midCooldown === 0 && rawMid > 0.04) {
+      this.midBeat = 1.0;
+      this._midCooldown = 16; // ~260ms cooldown
+    } else {
+      this.midBeat = Math.max(0, this.midBeat * 0.86); // rapid decay
+    }
   }
 
   getFullSpectrum() { return this.dataArray; }

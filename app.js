@@ -86,9 +86,11 @@ const $lumValue        = document.getElementById('lum-value');
 const $colorPresetBtns = document.querySelectorAll('.color-preset-btn');
 const $seekBar         = document.getElementById('seek-bar');
 const $seekFill        = document.getElementById('seek-bar-fill');
+const $sensSlider      = document.getElementById('sens-slider');
 
 const specCtx = $specCanvas.getContext('2d');
 let animFrameId = null;
+let spectrumFrameCount = 0;
 let _onEndedRef = null;   // stored for seek re-use
 
 // ════════════════════════════════════════════════════════════════════
@@ -113,6 +115,7 @@ $btnWarningAccept.addEventListener('click', () => {
 // ════════════════════════════════════════════════════════════════════
 // INIT HYDRA (deferred until warning accepted)
 // ════════════════════════════════════════════════════════════════════
+// INIT HYDRA (deferred until warning accepted)
 function initHydra() {
   $hydraCanvas.width  = window.innerWidth;
   $hydraCanvas.height = window.innerHeight;
@@ -133,17 +136,23 @@ function loop() {
 
   analyzer.update();
 
-  // Core bands
-  window.audioBass = analyzer.bass;
-  window.audioMid  = analyzer.mid;
-  window.audioHigh = analyzer.high;
-  window.audioVol  = analyzer.overall;
+  const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
 
-  // Extended bands
-  window.audioSub        = analyzer.sub;
-  window.audioLowMid     = analyzer.lowMid;
-  window.audioPresence   = analyzer.presence;
-  window.audioBrilliance = analyzer.brilliance;
+  // Core bands scaled by sensitivity
+  window.audioBass = analyzer.bass * sens;
+  window.audioMid  = analyzer.mid * sens;
+  window.audioHigh = analyzer.high * sens;
+  window.audioVol  = analyzer.overall * sens;
+
+  // Extended bands scaled by sensitivity
+  window.audioSub        = analyzer.sub * sens;
+  window.audioLowMid     = analyzer.lowMid * sens;
+  window.audioPresence   = analyzer.presence * sens;
+  window.audioBrilliance = analyzer.brilliance * sens;
+
+  // Beat transient triggers (not directly scaled to preserve 0.0 - 1.0 normalization)
+  window.audioBeat       = analyzer.bassBeat;
+  window.audioBeatMid    = analyzer.midBeat;
 
   drawSpectrum();
   updateTime();
@@ -154,6 +163,9 @@ function loop() {
 // SPECTRUM
 // ════════════════════════════════════════════════════════════════════
 function drawSpectrum() {
+  spectrumFrameCount++;
+  if (spectrumFrameCount % 2 !== 0) return;
+
   const data = analyzer.getFullSpectrum();
   if (!data) return;
 
@@ -161,16 +173,17 @@ function drawSpectrum() {
   const H = $specCanvas.height;
   specCtx.clearRect(0, 0, W, H);
 
-  const BAR_COUNT = 90;
+  const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
+  const BAR_COUNT = 60;
   const step  = Math.floor(data.length / BAR_COUNT);
   const barW  = W / BAR_COUNT;
 
   for (let i = 0; i < BAR_COUNT; i++) {
-    const val  = data[i * step] / 255;
+    const val  = (data[i * step] / 255) * sens;
     const barH = val * H;
-    const hueShift = (window.colorH + i * 0.6) % 360;
-    const sat  = window.colorS - i * 0.3;
-    const lum  = window.colorL + i * 0.15;
+    const hueShift = (window.colorH + i * 0.9) % 360;
+    const sat  = window.colorS - i * 0.45;
+    const lum  = window.colorL + i * 0.22;
     specCtx.fillStyle = `hsla(${hueShift}, ${sat}%, ${lum}%, 0.85)`;
     specCtx.fillRect(i * barW, H / 2 - barH / 2, Math.max(barW - 1, 1), barH);
   }
@@ -306,6 +319,7 @@ function onAudioEnded() {
 function setPlayState(playing) {
   $btnPlay.disabled  = playing || analyzer.isMic;
   $btnStop.disabled  = !playing;
+  resetHideTimer();
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -549,7 +563,7 @@ async function stopRecording() {
 // RESET
 // ════════════════════════════════════════════════════════════════════
 $btnReset.addEventListener('click', () => {
-  analyzer.stop();
+  analyzer.unload();
   if (recorder.isRecording) recorder.stop();
 
   window.audioBass = window.audioMid = window.audioHigh = window.audioVol = 0;
@@ -618,3 +632,30 @@ function _toast(msg, color, bg, duration) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), duration);
 }
+
+// ════════════════════════════════════════════════════════════════════
+// IMMERSIVE CONTROL AUTO-HIDE
+// ════════════════════════════════════════════════════════════════════
+let hideTimeout = null;
+
+function resetHideTimer() {
+  if (hideTimeout) clearTimeout(hideTimeout);
+  
+  if ($controlBar) $controlBar.classList.remove('hide-ui');
+  document.body.classList.remove('nocursor');
+  
+  if (analyzer && analyzer.isPlaying) {
+    const isPanelOpen = ($colorPanel && !$colorPanel.classList.contains('hidden')) || 
+                        ($customPanel && !$customPanel.classList.contains('hidden'));
+    if (isPanelOpen) return;
+    
+    hideTimeout = setTimeout(() => {
+      if ($controlBar) $controlBar.classList.add('hide-ui');
+      document.body.classList.add('nocursor');
+    }, 3000);
+  }
+}
+
+document.addEventListener('mousemove', resetHideTimer);
+document.addEventListener('keydown', resetHideTimer);
+document.addEventListener('click', resetHideTimer);
