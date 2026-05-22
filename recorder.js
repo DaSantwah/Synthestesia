@@ -30,7 +30,7 @@ export class VideoRecorder {
     const mimeType = VideoRecorder._bestMimeType();
     const options  = mimeType ? { 
       mimeType, 
-      videoBitsPerSecond: 12_000_000, // 12 Mbps for crystal-clear 1080p
+      videoBitsPerSecond: 6_000_000, // 6 Mbps for high-fidelity smooth recording
       audioBitsPerSecond: 256_000     // 256 kbps high-fidelity audio
     } : {};
 

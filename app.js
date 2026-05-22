@@ -69,6 +69,7 @@ const $btnToggleColor  = document.getElementById('btn-toggle-color');
 const $btnSnapshot     = document.getElementById('btn-snapshot');
 const $btnMidi         = document.getElementById('btn-midi');
 const $btnCustomPreset = document.getElementById('btn-custom-preset');
+const $btnScreen       = document.getElementById('btn-screen');
 const $btnCpClose      = document.getElementById('btn-cp-close');
 const $btnCpRun        = document.getElementById('btn-cp-run');
 const $cpCode          = document.getElementById('custom-preset-code');
@@ -115,16 +116,29 @@ $btnWarningAccept.addEventListener('click', () => {
 // ════════════════════════════════════════════════════════════════════
 // INIT HYDRA (deferred until warning accepted)
 // ════════════════════════════════════════════════════════════════════
-// INIT HYDRA (deferred until warning accepted)
+function getOptimizedDimensions() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let w = window.innerWidth * dpr;
+  let h = window.innerHeight * dpr;
+  const maxW = 1600; // Balanced for pixel-perfect quality and stable 60 FPS
+  if (w > maxW) {
+    h = Math.round(h * (maxW / w));
+    w = maxW;
+  }
+  return { w, h };
+}
+
 function initHydra() {
-  $hydraCanvas.width  = window.innerWidth;
-  $hydraCanvas.height = window.innerHeight;
+  const { w, h } = getOptimizedDimensions();
+  $hydraCanvas.width  = w;
+  $hydraCanvas.height = h;
   hydraCtrl.init($hydraCanvas);
 
   window.addEventListener('resize', () => {
-    $hydraCanvas.width  = window.innerWidth;
-    $hydraCanvas.height = window.innerHeight;
-    hydraCtrl.setResolution(window.innerWidth, window.innerHeight);
+    const { w, h } = getOptimizedDimensions();
+    $hydraCanvas.width  = w;
+    $hydraCanvas.height = h;
+    hydraCtrl.setResolution(w, h);
   });
 }
 
@@ -409,6 +423,19 @@ $btnCustomPreset.addEventListener('click', () => {
   $colorPanel.classList.add('hidden');
 });
 
+// ════════════════════════════════════════════════════════════════════
+// SCREEN SHARING (DJS LIVE SCREEN FEED IN HYDRA)
+// ════════════════════════════════════════════════════════════════════
+$btnScreen.addEventListener('click', async () => {
+  try {
+    const isActive = await hydraCtrl.toggleScreenCapture();
+    $btnScreen.classList.toggle('active', isActive);
+  } catch (err) {
+    console.error('[Synthestesia] Screen share error:', err);
+    showError('No se pudo iniciar la captura de pantalla. Asegúrate de dar los permisos necesarios.');
+  }
+});
+
 $btnCpClose.addEventListener('click', () => {
   $customPanel.classList.add('hidden');
 });
@@ -519,10 +546,6 @@ async function startRecording() {
   $colorPanel.classList.add('hidden');
 
   if (!analyzer.isMic) {
-    $hydraCanvas.width  = 1920;
-    $hydraCanvas.height = 1080;
-    hydraCtrl.setResolution(1920, 1080);
-
     analyzer.replay(async () => {
       await stopRecording();
       setPlayState(false);
@@ -544,12 +567,6 @@ async function stopRecording() {
   $btnRecord.classList.remove('recording');
   $recIndicator.classList.add('hidden');
 
-  if (!analyzer.isMic) {
-    $hydraCanvas.width  = window.innerWidth;
-    $hydraCanvas.height = window.innerHeight;
-    hydraCtrl.setResolution(window.innerWidth, window.innerHeight);
-  }
-
   if (url) {
     const safeName = ($trackName.textContent || 'synthestesia')
       .replace(/[^a-z0-9_\-]/gi, '_').toLowerCase();
@@ -564,6 +581,8 @@ async function stopRecording() {
 // ════════════════════════════════════════════════════════════════════
 $btnReset.addEventListener('click', () => {
   analyzer.unload();
+  hydraCtrl.stopScreenCapture();
+  $btnScreen.classList.remove('active');
   if (recorder.isRecording) recorder.stop();
 
   window.audioBass = window.audioMid = window.audioHigh = window.audioVol = 0;

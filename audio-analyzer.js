@@ -13,6 +13,7 @@ export class AudioAnalyzer {
   constructor() {
     this.audioContext     = null;
     this.analyser         = null;
+    this.compressor       = null;       // dynamic compressor for peak control/mastering
     this.source           = null;
     this.audioBuffer      = null;
     this.mediaStreamDest  = null;
@@ -65,6 +66,17 @@ export class AudioAnalyzer {
     this.bufferLength = this.analyser.frequencyBinCount; // 1024 bins
     this.dataArray    = new Uint8Array(this.bufferLength);
 
+    // Dynamic Compressor for mastering-level output control (preventing clipping and distortion)
+    this.compressor = this.audioContext.createDynamicsCompressor();
+    this.compressor.threshold.setValueAtTime(-2.0, this.audioContext.currentTime); // Prevent digital distortion
+    this.compressor.knee.setValueAtTime(8, this.audioContext.currentTime);          // Soft knee transition
+    this.compressor.ratio.setValueAtTime(4, this.audioContext.currentTime);         // 4:1 mastering-grade ratio
+    this.compressor.attack.setValueAtTime(0.005, this.audioContext.currentTime);    // Catch hot transients
+    this.compressor.release.setValueAtTime(0.12, this.audioContext.currentTime);    // Responsive release
+
+    // Connect Compressor -> Analyser
+    this.compressor.connect(this.analyser);
+
     this.analyser.connect(this.audioContext.destination);
 
     this.mediaStreamDest = this.audioContext.createMediaStreamDestination();
@@ -105,7 +117,7 @@ export class AudioAnalyzer {
     // Crucial: disconnect analyser from speakers to avoid feedback screeching
     try { this.analyser.disconnect(this.audioContext.destination); } catch (_) {}
     
-    micSource.connect(this.analyser);
+    micSource.connect(this.compressor);
 
     // Store as source so stopMic can clean it up
     this.source    = micSource;
@@ -244,7 +256,7 @@ export class AudioAnalyzer {
 
     this.source = this.audioContext.createBufferSource();
     this.source.buffer = this.audioBuffer;
-    this.source.connect(this.analyser);
+    this.source.connect(this.compressor);
 
     this.source.onended = () => {
       if (this.isPlaying) {
