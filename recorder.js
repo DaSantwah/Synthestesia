@@ -22,13 +22,17 @@ export class VideoRecorder {
 
     this.chunks = [];
 
-    const videoStream = canvas.captureStream(24);
+    const videoStream = canvas.captureStream(30); // Capture at smooth 30 FPS
     const tracks = [...videoStream.getVideoTracks()];
     if (audioStream) tracks.push(...audioStream.getAudioTracks());
     const combined = new MediaStream(tracks);
 
     const mimeType = VideoRecorder._bestMimeType();
-    const options  = mimeType ? { mimeType, videoBitsPerSecond: 4_000_000 } : {};
+    const options  = mimeType ? { 
+      mimeType, 
+      videoBitsPerSecond: 12_000_000, // 12 Mbps for crystal-clear 1080p
+      audioBitsPerSecond: 256_000     // 256 kbps high-fidelity audio
+    } : {};
 
     this.mediaRecorder = new MediaRecorder(combined, options);
 

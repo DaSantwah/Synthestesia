@@ -519,9 +519,9 @@ async function startRecording() {
   $colorPanel.classList.add('hidden');
 
   if (!analyzer.isMic) {
-    $hydraCanvas.width  = 1280;
-    $hydraCanvas.height = 720;
-    hydraCtrl.setResolution(1280, 720);
+    $hydraCanvas.width  = 1920;
+    $hydraCanvas.height = 1080;
+    hydraCtrl.setResolution(1920, 1080);
 
     analyzer.replay(async () => {
       await stopRecording();
