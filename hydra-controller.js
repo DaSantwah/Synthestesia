@@ -34,19 +34,34 @@ export class HydraController {
 
   // ── Init ─────────────────────────────────────────────────────────
   init(canvas) {
+    let w = canvas.width;
+    let h = canvas.height;
+    const maxW = 1920;
+    if (w > maxW) {
+      h = Math.round(h * (maxW / w));
+      w = maxW;
+    }
+
     this.hydra = new Hydra({
       canvas,
       detectAudio:         false,
       enableStreamCapture: false,
       makeGlobal:          true,
-      width:               canvas.width,
-      height:              canvas.height,
+      width:               w,
+      height:              h,
     });
     this.applyPreset(0);
   }
 
   setResolution(w, h) {
-    if (this.hydra) this.hydra.setResolution(w, h);
+    if (this.hydra) {
+      const maxW = 1920;
+      if (w > maxW) {
+        h = Math.round(h * (maxW / w));
+        w = maxW;
+      }
+      this.hydra.setResolution(w, h);
+    }
   }
 
   // ── Preset Switcher ──────────────────────────────────────────────
@@ -171,7 +186,7 @@ export class HydraController {
     osc(() => audioLowMid * 10 + 5, 0.02, () => audioHigh * 0.5)
       .modulate(osc(() => audioBass * 10).rotate(Math.PI / 2), () => audioMid * 0.3)
       .color(...this._c(() => 0.6 + audioBass * 0.4))
-      .blend(src(o0).scale(1.02).opacity(0.8))
+      .blend(src(o0).scale(1.02), 0.8)
       .out(o0);
   }
 
