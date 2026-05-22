@@ -87,6 +87,12 @@ export class AudioAnalyzer {
   // ── Microphone Input ────────────────────────────────────────────
   async initMic() {
     if (!this.audioContext) await this.init();
+    
+    // Ensure the AudioContext is resumed
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+
     this._stopSource();
 
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -95,6 +101,10 @@ export class AudioAnalyzer {
     this.micStream = stream;
 
     const micSource = this.audioContext.createMediaStreamSource(stream);
+    
+    // Crucial: disconnect analyser from speakers to avoid feedback screeching
+    try { this.analyser.disconnect(this.audioContext.destination); } catch (_) {}
+    
     micSource.connect(this.analyser);
 
     // Store as source so stopMic can clean it up
@@ -114,13 +124,19 @@ export class AudioAnalyzer {
   }
 
   // ── Playback ────────────────────────────────────────────────────
-  play(onEnded) {
+  async play(onEnded) {
     if (!this.audioBuffer || this.isPlaying) return;
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
     this._createAndStart(0, onEnded);
   }
 
-  replay(onEnded) {
+  async replay(onEnded) {
     this._stopSource();
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
     this._createAndStart(0, onEnded);
   }
 
@@ -223,6 +239,9 @@ export class AudioAnalyzer {
 
   // ── Private Helpers ─────────────────────────────────────────────
   _createAndStart(offset = 0, onEnded = null) {
+    // Reconnect analyser to speakers for audible file playback
+    try { this.analyser.connect(this.audioContext.destination); } catch (_) {}
+
     this.source = this.audioContext.createBufferSource();
     this.source.buffer = this.audioBuffer;
     this.source.connect(this.analyser);

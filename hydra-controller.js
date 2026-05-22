@@ -183,10 +183,14 @@ export class HydraController {
 
   // ── PRESET 09 · Deep Current ──────────────────────────────────────
   _p9_deepCurrent() {
-    osc(() => audioLowMid * 10 + 5, 0.02, () => audioHigh * 0.5)
-      .modulate(osc(() => audioBass * 10).rotate(Math.PI / 2), () => audioMid * 0.3)
-      .color(...this._c(() => 0.6 + audioBass * 0.4))
-      .blend(src(o0).scale(1.02), 0.8)
+    src(o0)
+      .scale(1.02)
+      .blend(
+        osc(() => audioLowMid * 10 + 5, 0.02, () => audioHigh * 0.5)
+          .modulate(osc(() => audioBass * 10).rotate(Math.PI / 2), () => audioMid * 0.3)
+          .color(...this._c(() => 0.6 + audioBass * 0.4)),
+        0.2
+      )
       .out(o0);
   }
 
