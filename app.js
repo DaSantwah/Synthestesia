@@ -98,10 +98,81 @@ let _onEndedRef = null;   // stored for seek re-use
 // PHOTOSENSITIVITY WARNING GATE
 // ════════════════════════════════════════════════════════════════════
 $btnWarningAccept.addEventListener('click', () => {
-  $warningScreen.style.transition = 'opacity 0.6s ease';
-  $warningScreen.style.opacity = '0';
+  // 1. Ocultar el contenedor de advertencia rápidamente con animación
+  const $warningContainer = $warningScreen.querySelector('.warning-container');
+  if ($warningContainer) {
+    $warningContainer.style.transition = 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+    $warningContainer.style.opacity = '0';
+    $warningContainer.style.transform = 'scale(0.85) translateY(-15px)';
+  }
+
+  // Desvanecer el fondo de la pantalla de advertencia suavemente
+  $warningScreen.style.transition = 'background 0.9s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.9s cubic-bezier(0.16, 1, 0.3, 1)';
+  $warningScreen.style.background = 'rgba(0, 0, 0, 0)';
+  $warningScreen.style.backdropFilter = 'blur(0px)';
+  if ($warningScreen.style.webkitBackdropFilter !== undefined) {
+    $warningScreen.style.webkitBackdropFilter = 'blur(0px)';
+  }
+
+  // 2. Crear y disparar la explosión caleidoscópica de cristales rotos (Shatter Glass)
+  const shatterContainer = document.createElement('div');
+  shatterContainer.id = 'shatter-container';
+  document.body.appendChild(shatterContainer);
+
+  const numSectors = 8;
+  const shardsPerSector = 5;
+
+  for (let s = 0; s < shardsPerSector; s++) {
+    // Definimos parámetros para este grupo de fragmentos simétricos
+    const baseAngle = Math.random() * (Math.PI * 2 / numSectors);
+    const speed = 250 + Math.random() * 550; // pixeles a viajar
+    const size = 12 + Math.random() * 24;    // tamaño del fragmento
+    const rotation = 180 + Math.random() * 540; // rotación final
+    const delay = Math.random() * 0.08;      // retraso staggered
+
+    // Formular un polígono aleatorio afilado para el fragmento
+    const p1 = `${Math.random() * 40}% ${Math.random() * 40}%`;
+    const p2 = `${60 + Math.random() * 40}% ${Math.random() * 20}%`;
+    const p3 = `${50 + Math.random() * 50}% ${60 + Math.random() * 40}%`;
+    const p4 = `${Math.random() * 30}% ${70 + Math.random() * 30}%`;
+    const clipPath = `polygon(${p1}, ${p2}, ${p3}, ${p4})`;
+
+    // Replicar simétricamente en cada sector (caleidoscopio)
+    for (let sec = 0; sec < numSectors; sec++) {
+      const angle = baseAngle + (sec * (Math.PI * 2 / numSectors));
+      const dx = Math.cos(angle) * speed;
+      const dy = Math.sin(angle) * speed;
+
+      const shard = document.createElement('div');
+      shard.className = 'glass-shard';
+      shard.style.width = `${size}px`;
+      shard.style.height = `${size}px`;
+      shard.style.clipPath = clipPath;
+      shard.style.left = '50%';
+      shard.style.top = '50%';
+      shard.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)';
+
+      // Color e iluminación prismática según el sector
+      const hue = (sec * 45 + (s * 15)) % 360;
+      shard.style.background = `linear-gradient(135deg, hsla(${hue}, 85%, 75%, 0.45) 0%, hsla(${(hue + 45) % 360}, 85%, 60%, 0.1) 100%)`;
+      shard.style.boxShadow = `inset 0 0 4px hsla(${hue}, 90%, 80%, 0.6)`;
+      shard.style.border = `0.5px solid hsla(${hue}, 90%, 85%, 0.3)`;
+
+      shatterContainer.appendChild(shard);
+
+      // Animar en el siguiente frame
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          shard.style.transition = 'transform 1.3s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 1.3s cubic-bezier(0.1, 0.8, 0.2, 1)';
+          shard.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(0) rotate(${rotation}deg)`;
+          shard.style.opacity = '0';
+        }, delay * 1000);
+      });
+    }
+  }
+
+  // 3. A mitad de la explosión (250ms), preparamos e inicializamos la app de fondo
   setTimeout(() => {
-    $warningScreen.style.display = 'none';
     $app.classList.remove('hidden');
     
     // Instanciar aquí para evitar bloqueos de autoplay
@@ -110,7 +181,13 @@ $btnWarningAccept.addEventListener('click', () => {
     recorder  = new VideoRecorder();
     
     initHydra();
-  }, 600);
+  }, 250);
+
+  // 4. Limpiar los nodos del DOM de la explosión y ocultar completamente la pantalla de advertencia
+  setTimeout(() => {
+    shatterContainer.remove();
+    $warningScreen.style.display = 'none';
+  }, 1300);
 });
 
 // ════════════════════════════════════════════════════════════════════

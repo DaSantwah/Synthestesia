@@ -1171,3 +1171,24 @@ html, body {
 body.nocursor {
   cursor: none;
 }
+
+/* ══ SHATTER GLASS KALEIDOSCOPE EFFECT ═════════════════════════════ */
+#shatter-container {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.glass-shard {
+  position: absolute;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0.95;
+  transition: none;
+  transform-origin: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
