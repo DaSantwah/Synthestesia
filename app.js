@@ -197,7 +197,11 @@ function getOptimizedDimensions() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   let w = window.innerWidth * dpr;
   let h = window.innerHeight * dpr;
-  const maxW = 1600; // Balanced for pixel-perfect quality and stable 60 FPS
+  
+  // Optimize resolution dynamically: limit physical width to 960px on mobile for 60 FPS
+  const isMobile = window.innerWidth <= 768;
+  const maxW = isMobile ? 960 : 1500;
+  
   if (w > maxW) {
     h = Math.round(h * (maxW / w));
     w = maxW;
@@ -219,11 +223,10 @@ function initHydra() {
   });
 }
 
-// ════════════════════════════════════════════════════════════════════
-// ANIMATION LOOP
-// ════════════════════════════════════════════════════════════════════
+let loopFrameCount = 0;
 function loop() {
   animFrameId = requestAnimationFrame(loop);
+  loopFrameCount++;
 
   analyzer.update();
 
@@ -245,18 +248,22 @@ function loop() {
   window.audioBeat       = analyzer.bassBeat;
   window.audioBeatMid    = analyzer.midBeat;
 
-  drawSpectrum();
-  updateTime();
-  updateSeekBar();
+  // Throttle visual spectrum to 30 FPS
+  if (loopFrameCount % 2 === 0) {
+    drawSpectrum();
+  }
+  
+  // Throttle slower UI updates to 10 FPS (saves CPU layout paints!)
+  if (loopFrameCount % 6 === 0) {
+    updateTime();
+    updateSeekBar();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════
 // SPECTRUM
 // ════════════════════════════════════════════════════════════════════
 function drawSpectrum() {
-  spectrumFrameCount++;
-  if (spectrumFrameCount % 2 !== 0) return;
-
   const data = analyzer.getFullSpectrum();
   if (!data) return;
 

@@ -354,53 +354,67 @@ export class HydraController {
   _p15_infiniteTunnel() {
     this._s(
       src(o0)
-        .scale(() => 0.96 - audioBass * 0.04) // Efecto de alejamiento continuo hacia el infinito
-        .rotate(() => 0.01 + audioMid * 0.02)  // Giro constante tipo vórtice
+        .scale(0.96) // Alejamiento fluido y constante
+        .rotate(0.012) // Giro constante tipo vórtice (sin aceleraciones bruscas)
         .blend(
           osc(20, 0.06, 0.9)
-            .kaleid(() => 5 + Math.round(audioBass * 3)) // Número de aspas reactivo al bajo
+            .kaleid(5) // Aspas constantes para un patrón fluido
             .color(...this._c(() => 0.6 + audioMid * 0.4))
-            .rotate(() => time * 0.1 + audioBass * 0.1)
-            .modulate(osc(10).rotate(1.57), () => audioMid * 0.1), // Ondulación de vórtice espiral
-          () => 0.12 + audioBeat * 0.1 // Mezcla elástica con el ritmo
+            .rotate(() => time * 0.08) // Rotación constante
+            .modulate(osc(10).rotate(1.57), 0.05) // Ondulación constante
+            .add(
+              noise(() => 180 + audioBass * 50, 0.01).luma(0.4, 0.1), // Textura granulada reactiva
+              () => audioBass * 0.35 // Gránulos reactivos al bajo (más granulado al reaccionar)
+            ),
+          0.12 // Mezcla fluida y constante
         )
     ).out(o0);
   }
 
   // ── PRESET 16 · Holographic Sphere (Esfera Holográfica) ───────────
   _p16_reactiveSphere() {
-    // Rejilla de semitono esférica con ojo de pez en 3D
-    const getGrid = () => osc(() => 50 + audioBass * 20, 0, 0.8)
-      .mult(osc(() => 50 + audioBass * 20, 0, 0.8).rotate(Math.PI / 2))
-      .modulateScale(shape(100, 0.9, 0.4), () => -0.85 - audioVol * 0.15)
-      .rotate(() => time * 0.03 + audioMid * 0.05);
+    // Generador de rejilla con ojo de pez en 3D y grano de semitono reactivo
+    const getGrainyGrid = (freqFunc, grainIntensityFunc) => osc(freqFunc, 0, 0.8)
+      .mult(osc(freqFunc, 0, 0.8).rotate(Math.PI / 2))
+      .modulateScale(shape(100, 0.9, 0.4), -0.85) // Abombamiento constante
+      .add(noise(220, 0.01).luma(0.4, 0.1), grainIntensityFunc) // Grano analógico/semitono
+      .rotate(() => time * 0.03); // Giro constante
 
-    // Halo de brillo ambiental de fondo que reacciona al volumen general
+    // Halo de brillo ambiental de fondo que reacciona de forma fluida al volumen general
     const halo = shape(100, 0.78, 0.35)
-      .color(...this._cRot(0, () => audioVol * 0.18));
+      .color(...this._cRot(0, () => audioVol * 0.15));
 
-    // Capa 1: Núcleo (Graves / Bajo) - Color principal
-    const core = getGrid()
+    // Capa 1: Núcleo (Reactivo 100% a Graves)
+    const core = getGrainyGrid(
+      () => 45 + audioBass * 15,
+      () => 0.08 + audioBass * 0.15
+    )
       .color(...this._cRot(0, () => 0.7 + audioBass * 0.5))
-      .mult(shape(100, () => 0.25 + audioBass * 0.12, 0.1));
+      .mult(shape(100, () => 0.22 + audioBass * 0.12, 0.08));
 
-    // Capa 2: Anillo Medio (Medios) - Color rotado +120°
-    const mid = getGrid()
+    // Capa 2: Anillo Medio (Reactivo 100% a Medios)
+    const mid = getGrainyGrid(
+      () => 55 + audioMid * 18,
+      () => 0.08 + audioMid * 0.15
+    )
       .color(...this._cRot(120, () => 0.7 + audioMid * 0.5))
       .mult(
-        shape(100, () => 0.5 + audioMid * 0.15, 0.1)
-          .sub(shape(100, () => 0.25 + audioBass * 0.12, 0.1))
+        shape(100, () => 0.48 + audioMid * 0.16, 0.08)
+          .sub(shape(100, 0.24, 0.08))
       );
 
-    // Capa 3: Anillo Exterior (Agudos) - Color rotado +240°
-    const high = getGrid()
+    // Capa 3: Anillo Exterior (Reactivo 100% a Agudos)
+    const high = getGrainyGrid(
+      () => 65 + audioHigh * 22,
+      () => 0.08 + audioHigh * 0.2
+    )
       .color(...this._cRot(240, () => 0.7 + audioHigh * 0.5))
       .mult(
-        shape(100, 0.72, 0.08)
-          .sub(shape(100, () => 0.5 + audioMid * 0.15, 0.1))
+        shape(100, () => 0.72 + audioHigh * 0.12, 0.08)
+          .sub(shape(100, 0.48, 0.08))
       );
 
-    // Fusionamos el halo de fondo con el grid segmentado por frecuencias
+    // Fusionamos el halo con los tres círculos de colores reaccionando por separado
     this._s(
       halo.add(core.add(mid).add(high))
     ).out(o0);
