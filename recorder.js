@@ -30,8 +30,8 @@ export class VideoRecorder {
     const mimeType = VideoRecorder._bestMimeType();
     const options  = mimeType ? { 
       mimeType, 
-      videoBitsPerSecond: 6_000_000, // 6 Mbps for high-fidelity smooth recording
-      audioBitsPerSecond: 256_000     // 256 kbps high-fidelity audio
+      videoBitsPerSecond: 12_000_000, // 12 Mbps for ultra high-fidelity recording
+      audioBitsPerSecond: 320_000     // 320 kbps ultra high-fidelity audio
     } : {};
 
     this.mediaRecorder = new MediaRecorder(combined, options);
@@ -62,9 +62,9 @@ export class VideoRecorder {
 
   static _bestMimeType() {
     const candidates = [
-      'video/webm;codecs=h264,opus',
+      'video/webm;codecs=vp9,opus',  // Prioritiza VP9 para degradados WebGL fluidos y limpios
+      'video/webm;codecs=h264,opus', // Excelente compatibilidad
       'video/webm;codecs=vp8,opus',
-      'video/webm;codecs=vp9,opus',
       'video/webm',
       'video/mp4',
     ];

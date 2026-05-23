@@ -20,7 +20,7 @@ export class HydraController {
   constructor() {
     this.hydra         = null;
     this.currentPreset = 0;
-    this.numPresets    = 14;
+    this.numPresets    = 15;
     this.screenActive  = false; // Live desktop/window capture status
   }
 
@@ -154,6 +154,7 @@ export class HydraController {
       this._p12_silkPhase,
       this._p13_gentleVortex,
       this._p14_timeWarp,
+      this._p15_infiniteTunnel,
     ];
 
     presets[this.currentPreset].call(this);
@@ -336,6 +337,22 @@ export class HydraController {
           () => audioVol * 0.2
         )
         .rotate(() => audioBass * 0.2, 0.002)
+    ).out(o0);
+  }
+
+  // ── PRESET 15 · Infinite Tunnel ───────────────────────────────────
+  _p15_infiniteTunnel() {
+    this._s(
+      src(o0)
+        .scale(() => 0.96 - audioBass * 0.03) // Recede infinitamente hacia el centro
+        .rotate(() => 0.005 + audioMid * 0.01) // Rotación constante modulada por medios
+        .blend(
+          shape(30, () => 0.12 + audioBass * 0.18, 0.25) // Círculo central suave (tunelador)
+            .color(...this._c(() => 0.65 + audioMid * 0.35))
+            .luma(0.12, 0.06)
+            .modulateRotate(osc(() => audioBass * 8 + 2, 0.04), () => audioMid * 0.3),
+          () => 0.15 + audioBeat * 0.15 // Mezcla elástica en cada golpe de ritmo
+        )
     ).out(o0);
   }
 }

@@ -212,7 +212,7 @@ function updateTime() {
 }
 
 function updateSeekBar() {
-  if (!analyzer.duration || analyzer.isMic) return;
+  if (!analyzer.duration || analyzer.isMic || _seeking) return;
   const pct = (analyzer.currentTime / analyzer.duration) * 1000;
   $seekBar.value = pct;
   $seekFill.style.width = `${(pct / 1000) * 100}%`;
@@ -243,6 +243,10 @@ $seekBar.addEventListener('change', () => {
   analyzer.seek(t, onAudioEnded);
   if (recorder.isRecording) stopRecording();
 });
+
+// Oyentes globales para liberar robustamente el arrastre en cualquier parte
+window.addEventListener('mouseup', () => { _seeking = false; });
+window.addEventListener('touchend', () => { _seeking = false; });
 
 // ════════════════════════════════════════════════════════════════════
 // FILE LOADING
@@ -741,3 +745,25 @@ function resetHideTimer() {
 document.addEventListener('mousemove', resetHideTimer);
 document.addEventListener('keydown', resetHideTimer);
 document.addEventListener('click', resetHideTimer);
+
+// Activar/pausar reproducción con la barra espaciadora
+window.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.code === 'Space') {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) {
+      return;
+    }
+    
+    if (!$controlBar || $controlBar.classList.contains('hidden')) return;
+    if (!analyzer || analyzer.isMic) return;
+
+    e.preventDefault(); // Evitar scroll
+    resetHideTimer();
+
+    if (analyzer.isPlaying) {
+      $btnStop.click();
+    } else {
+      $btnPlay.click();
+    }
+  }
+});
