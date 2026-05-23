@@ -20,7 +20,7 @@ export class HydraController {
   constructor() {
     this.hydra         = null;
     this.currentPreset = 0;
-    this.numPresets    = 15;
+    this.numPresets    = 16;
     this.screenActive  = false; // Live desktop/window capture status
   }
 
@@ -31,6 +31,15 @@ export class HydraController {
       () => hsl2rgb(window.colorH, window.colorS, window.colorL)[0] * modFunc(),
       () => hsl2rgb(window.colorH, window.colorS, window.colorL)[1] * modFunc(),
       () => hsl2rgb(window.colorH, window.colorS, window.colorL)[2] * modFunc()
+    ];
+  }
+
+  // Rotated HSL color helper for differentiating frequencies
+  _cRot(offset, modFunc = () => 1) {
+    return [
+      () => hsl2rgb((window.colorH + offset) % 360, window.colorS, window.colorL)[0] * modFunc(),
+      () => hsl2rgb((window.colorH + offset) % 360, window.colorS, window.colorL)[1] * modFunc(),
+      () => hsl2rgb((window.colorH + offset) % 360, window.colorS, window.colorL)[2] * modFunc()
     ];
   }
 
@@ -155,6 +164,7 @@ export class HydraController {
       this._p13_gentleVortex,
       this._p14_timeWarp,
       this._p15_infiniteTunnel,
+      this._p16_reactiveSphere,
     ];
 
     presets[this.currentPreset].call(this);
@@ -340,19 +350,59 @@ export class HydraController {
     ).out(o0);
   }
 
-  // ── PRESET 15 · Infinite Tunnel ───────────────────────────────────
+  // ── PRESET 15 · Infinite Tunnel (Vórtice Infinito) ───────────────
   _p15_infiniteTunnel() {
     this._s(
       src(o0)
-        .scale(() => 0.96 - audioBass * 0.03) // Recede infinitamente hacia el centro
-        .rotate(() => 0.005 + audioMid * 0.01) // Rotación constante modulada por medios
+        .scale(() => 0.96 - audioBass * 0.04) // Efecto de alejamiento continuo hacia el infinito
+        .rotate(() => 0.01 + audioMid * 0.02)  // Giro constante tipo vórtice
         .blend(
-          shape(30, () => 0.12 + audioBass * 0.18, 0.25) // Círculo central suave (tunelador)
-            .color(...this._c(() => 0.65 + audioMid * 0.35))
-            .luma(0.12, 0.06)
-            .modulateRotate(osc(() => audioBass * 8 + 2, 0.04), () => audioMid * 0.3),
-          () => 0.15 + audioBeat * 0.15 // Mezcla elástica en cada golpe de ritmo
+          osc(20, 0.06, 0.9)
+            .kaleid(() => 5 + Math.round(audioBass * 3)) // Número de aspas reactivo al bajo
+            .color(...this._c(() => 0.6 + audioMid * 0.4))
+            .rotate(() => time * 0.1 + audioBass * 0.1)
+            .modulate(osc(10).rotate(1.57), () => audioMid * 0.1), // Ondulación de vórtice espiral
+          () => 0.12 + audioBeat * 0.1 // Mezcla elástica con el ritmo
         )
+    ).out(o0);
+  }
+
+  // ── PRESET 16 · Holographic Sphere (Esfera Holográfica) ───────────
+  _p16_reactiveSphere() {
+    // Rejilla de semitono esférica con ojo de pez en 3D
+    const getGrid = () => osc(() => 50 + audioBass * 20, 0, 0.8)
+      .mult(osc(() => 50 + audioBass * 20, 0, 0.8).rotate(Math.PI / 2))
+      .modulateScale(shape(100, 0.9, 0.4), () => -0.85 - audioVol * 0.15)
+      .rotate(() => time * 0.03 + audioMid * 0.05);
+
+    // Halo de brillo ambiental de fondo que reacciona al volumen general
+    const halo = shape(100, 0.78, 0.35)
+      .color(...this._cRot(0, () => audioVol * 0.18));
+
+    // Capa 1: Núcleo (Graves / Bajo) - Color principal
+    const core = getGrid()
+      .color(...this._cRot(0, () => 0.7 + audioBass * 0.5))
+      .mult(shape(100, () => 0.25 + audioBass * 0.12, 0.1));
+
+    // Capa 2: Anillo Medio (Medios) - Color rotado +120°
+    const mid = getGrid()
+      .color(...this._cRot(120, () => 0.7 + audioMid * 0.5))
+      .mult(
+        shape(100, () => 0.5 + audioMid * 0.15, 0.1)
+          .sub(shape(100, () => 0.25 + audioBass * 0.12, 0.1))
+      );
+
+    // Capa 3: Anillo Exterior (Agudos) - Color rotado +240°
+    const high = getGrid()
+      .color(...this._cRot(240, () => 0.7 + audioHigh * 0.5))
+      .mult(
+        shape(100, 0.72, 0.08)
+          .sub(shape(100, () => 0.5 + audioMid * 0.15, 0.1))
+      );
+
+    // Fusionamos el halo de fondo con el grid segmentado por frecuencias
+    this._s(
+      halo.add(core.add(mid).add(high))
     ).out(o0);
   }
 }
