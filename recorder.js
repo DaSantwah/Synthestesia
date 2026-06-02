@@ -63,10 +63,10 @@ export class VideoRecorder {
 
   static _bestMimeType() {
     const candidates = [
-      'video/webm;codecs=vp8,opus',
+      'video/mp4',
       'video/webm;codecs=h264,opus',
-      'video/webm',
-      'video/mp4'
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
     ];
     return candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
   }
