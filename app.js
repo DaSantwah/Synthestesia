@@ -67,8 +67,14 @@ const $micIndicator    = document.getElementById('mic-indicator');
 const $btnPlay         = document.getElementById('btn-play');
 const $btnStop         = document.getElementById('btn-stop');
 const $btnRecord       = document.getElementById('btn-record');
-const $recLabel        = document.getElementById('rec-label');
 const $btnDownload     = document.getElementById('btn-download');
+const $recIndicator    = document.getElementById('rec-indicator');
+const $recLabel        = document.getElementById('rec-label');
+
+const $videoPreviewModal = document.getElementById('video-preview-modal');
+const $previewVideo      = document.getElementById('preview-video');
+const $btnDownloadModal  = document.getElementById('btn-download-modal');
+const $btnCloseModal     = document.getElementById('btn-close-modal');
 const $btnReset        = document.getElementById('btn-reset');
 const $btnToggleColor  = document.getElementById('btn-toggle-color');
 const $btnSnapshot     = document.getElementById('btn-snapshot');
@@ -734,11 +740,22 @@ async function stopRecording() {
     const mime = recorder.mediaRecorder ? recorder.mediaRecorder.mimeType : '';
     const ext = mime.includes('mp4') ? 'mp4' : 'webm';
     
-    $btnDownload.download = `${safeName}_synthestesia.${ext}`;
-    $btnDownload.href = url;
-    $btnDownload.classList.remove('hidden');
+    $previewVideo.src = url;
+    $btnDownloadModal.download = `${safeName}_synthestesia.${ext}`;
+    $btnDownloadModal.href = url;
+    $videoPreviewModal.classList.remove('hidden');
+    
+    // Reproducir automáticamente la vista previa
+    $previewVideo.play().catch(e => console.log('Autoplay prevent:', e));
   }
 }
+
+$btnCloseModal.addEventListener('click', () => {
+  $videoPreviewModal.classList.add('hidden');
+  $previewVideo.pause();
+  $previewVideo.src = '';
+});
+
 
 // ════════════════════════════════════════════════════════════════════
 // RESET
