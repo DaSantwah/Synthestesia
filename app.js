@@ -18,6 +18,11 @@
  *   colorH / colorS / colorL
  */
 
+// Variables globales de audio requeridas por Hydra
+window.audioBass = 0; window.audioMid = 0; window.audioHigh = 0; window.audioVol = 0;
+window.audioSub = 0; window.audioLowMid = 0; window.audioPresence = 0; window.audioBrilliance = 0;
+window.audioBeat = 0; window.audioBeatMid = 0;
+
 import { AudioAnalyzer }  from './audio-analyzer.js';
 import { HydraController } from './hydra-controller.js';
 import { VideoRecorder }   from './recorder.js';
