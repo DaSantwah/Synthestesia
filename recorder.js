@@ -30,8 +30,8 @@ export class VideoRecorder {
     const mimeType = VideoRecorder._bestMimeType();
     const options  = mimeType ? { 
       mimeType, 
-      videoBitsPerSecond: 12_000_000, // 12 Mbps for ultra high-fidelity recording
-      audioBitsPerSecond: 320_000     // 320 kbps ultra high-fidelity audio
+      videoBitsPerSecond: 5_000_000, // 5 Mbps for good quality while maintaining performance and stability
+      audioBitsPerSecond: 128_000     // 128 kbps HQ audio to prevent audio dropouts/sync issues
     } : {};
 
     this.mediaRecorder = new MediaRecorder(combined, options);
@@ -40,7 +40,8 @@ export class VideoRecorder {
       if (data && data.size > 0) this.chunks.push(data);
     };
 
-    this.mediaRecorder.start(100);
+    // start without a timeslice (or large timeslice) prevents the encoder from being overloaded every 100ms
+    this.mediaRecorder.start();
     this.isRecording = true;
   }
 
@@ -62,11 +63,11 @@ export class VideoRecorder {
 
   static _bestMimeType() {
     const candidates = [
-      'video/webm;codecs=vp9,opus',  // Prioritiza VP9 para degradados WebGL fluidos y limpios
-      'video/webm;codecs=h264,opus', // Excelente compatibilidad
+      'video/mp4',                   // MP4 is lighter on resources and widely hardware accelerated
+      'video/webm;codecs=h264,opus', // H264 has better performance than VP9
       'video/webm;codecs=vp8,opus',
+      'video/webm;codecs=vp9,opus',
       'video/webm',
-      'video/mp4',
     ];
     return candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
   }

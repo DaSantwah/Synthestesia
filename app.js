@@ -720,8 +720,13 @@ async function stopRecording() {
 
   if (url) {
     const safeName = ($trackName.textContent || 'synthestesia')
-      .replace(/[^a-z0-9_\-]/gi, '_').toLowerCase();
-    $btnDownload.download = `${safeName}_synthestesia.webm`;
+      .replace(/[^a-z0-9_\\-]/gi, '_').toLowerCase();
+      
+    // Determine the correct extension
+    const mime = recorder.mediaRecorder ? recorder.mediaRecorder.mimeType : '';
+    const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+    
+    $btnDownload.download = `${safeName}_synthestesia.${ext}`;
     $btnDownload.href = url;
     $btnDownload.classList.remove('hidden');
   }
