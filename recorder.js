@@ -63,11 +63,10 @@ export class VideoRecorder {
 
   static _bestMimeType() {
     const candidates = [
-      'video/mp4',                   // MP4 is lighter on resources and widely hardware accelerated
-      'video/webm;codecs=h264,opus', // H264 has better performance than VP9
       'video/webm;codecs=vp8,opus',
-      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=h264,opus',
       'video/webm',
+      'video/mp4'
     ];
     return candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
   }
