@@ -273,17 +273,19 @@ export class HydraController {
         .scale(() => 1, () => window.innerHeight / window.innerWidth)
         .repeat(20, 20)
         .modulateScale(osc(10).rotate(1.57), 0.5)
-        .scrollY(() => time * 0.2 + audioLowMid * 0.05)
-        .color(...this._cRot(240, () => 0.5 + audioBass * 0.5)) // Triadic secondary color
+        .scrollY(() => time * 0.5 + audioLowMid * 2.0) // Hyper-speed scrolling on beat
+        .modulateScrollY(osc(() => 5 + audioBass * 20), () => audioSub * 1.5) // Bass distortion wave
+        .color(...this._cRot(240, () => 1.0 + audioBass * 2.0)) // Triadic secondary color flash
         .add(
-          shape(20, () => 0.3 + audioMid * 0.1, 0.2)
-            .color(...this._cRot(30, () => 1.0)) // Analogous bright sun
-            .scrollY(-0.2), 
-          () => 0.8 + audioVol * 0.2
+          shape(20, () => 0.4 + audioMid * 1.5, 0.2) // Sun pulses hugely
+            .color(...this._cRot(30, () => 1.5 + audioHigh * 2.0)) // Analogous bright sun
+            .scrollY(-0.2)
+            .scale(() => 1.0 + audioBass * 0.5), 
+          () => 0.6 + audioVol * 1.5
         )
         .add(
-          src(o0).scale(1.02).modulate(noise(2), 0.01), // Retro trailing effect
-          0.1
+          src(o0).scale(() => 1.02 + audioBass * 0.1).modulate(noise(() => 2 + audioMid * 5), () => 0.01 + audioHigh * 0.2), // Reactive retro trailing effect
+          0.3
         )
     ).out(o0);
   }
