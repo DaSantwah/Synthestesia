@@ -22,7 +22,7 @@ export class VideoRecorder {
 
     this.chunks = [];
 
-    const videoStream = canvas.captureStream(30); // Capture at smooth 30 FPS
+    const videoStream = canvas.captureStream(60); // Capture at smooth 60 FPS for excellent quality
     const tracks = [...videoStream.getVideoTracks()];
     if (audioStream) tracks.push(...audioStream.getAudioTracks());
     const combined = new MediaStream(tracks);

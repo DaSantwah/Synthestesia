@@ -232,17 +232,17 @@ function loop() {
 
   const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
 
-  // Core bands scaled by sensitivity
-  window.audioBass = analyzer.bass * sens;
-  window.audioMid  = analyzer.mid * sens;
-  window.audioHigh = analyzer.high * sens;
-  window.audioVol  = analyzer.overall * sens;
+  // Core bands scaled by sensitivity and smoothly bounded to prevent visual chaos
+  window.audioBass = Math.min(analyzer.bass * sens, 1.8);
+  window.audioMid  = Math.min(analyzer.mid * sens, 1.5);
+  window.audioHigh = Math.min(analyzer.high * sens, 1.5);
+  window.audioVol  = Math.min(analyzer.overall * sens, 2.0);
 
-  // Extended bands scaled by sensitivity
-  window.audioSub        = analyzer.sub * sens;
-  window.audioLowMid     = analyzer.lowMid * sens;
-  window.audioPresence   = analyzer.presence * sens;
-  window.audioBrilliance = analyzer.brilliance * sens;
+  // Extended bands scaled by sensitivity and bounded
+  window.audioSub        = Math.min(analyzer.sub * sens, 2.0);
+  window.audioLowMid     = Math.min(analyzer.lowMid * sens, 1.6);
+  window.audioPresence   = Math.min(analyzer.presence * sens, 1.6);
+  window.audioBrilliance = Math.min(analyzer.brilliance * sens, 1.8);
 
   // Beat transient triggers (not directly scaled to preserve 0.0 - 1.0 normalization)
   window.audioBeat       = analyzer.bassBeat;
@@ -346,8 +346,11 @@ async function handleFile(file) {
   }
 
   try {
+    const prevName = $trackName.textContent;
+    $trackName.textContent = 'DECODIFICANDO AUDIO...';
+    
     const duration = await analyzer.loadFile(file);
-    const name = file.name.replace(/\.[^.]+$/, '');
+    const name = file.name.replace(/\\.[^.]+$/, '');
     $trackName.textContent = name.length > 32 ? name.slice(0, 30) + '…' : name;
     $trackTime.textContent = `0:00 / ${fmt(duration)}`;
 

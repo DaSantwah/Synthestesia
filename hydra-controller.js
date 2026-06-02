@@ -259,14 +259,25 @@ export class HydraController {
     ).out(o0);
   }
 
-  // ── PRESET 08 · Neon Wake ─────────────────────────────────────────
+  // ── PRESET 08 · Vaporwave Retro-Grid ──────────────────────────────
   _p8_neonWake() {
     this._s(
-      voronoi(() => audioHigh * 6 + 4, 0.03, () => audioMid * 2)
-        .diff(osc(() => audioBass * 10 + 5, 0.02).rotate(() => audioMid * 0.5, 0.005))
-        .kaleid(3)
-        .colorama(() => audioBrilliance * 0.08)
-        .color(...this._c(() => 0.5 + audioVol * 0.4))
+      shape(4, 0.9, 0.01)
+        .scale(() => 1, () => window.innerHeight / window.innerWidth)
+        .repeat(20, 20)
+        .modulateScale(osc(10).rotate(1.57), 0.5)
+        .scrollY(() => time * 0.2 + audioLowMid * 0.05)
+        .color(...this._cRot(240, () => 0.5 + audioBass * 0.5)) // Triadic secondary color
+        .add(
+          shape(20, () => 0.3 + audioMid * 0.1, 0.2)
+            .color(...this._cRot(30, () => 1.0)) // Analogous bright sun
+            .scrollY(-0.2), 
+          () => 0.8 + audioVol * 0.2
+        )
+        .add(
+          src(o0).scale(1.02).modulate(noise(2), 0.01), // Retro trailing effect
+          0.1
+        )
     ).out(o0);
   }
 
@@ -285,18 +296,19 @@ export class HydraController {
     ).out(o0);
   }
 
-  // ── PRESET 10 · Dream Scan ────────────────────────────────────────
+  // ── PRESET 10 · Liquid Gold Fluid ─────────────────────────────────
   _p10_dreamScan() {
     this._s(
-      src(o0)
-        .scrollX(() => (audioBass - 0.5) * 0.005)
-        .scrollY(() => 0.001)
-        .modulate(osc(() => audioMid * 20 + 10, 0, () => audioBass * 0.2), () => audioBass * 0.02)
+      noise(() => 2 + audioSub * 0.5, 0.05)
+        .modulate(voronoi(() => 3 + audioMid * 2), () => 0.3 + audioBass * 0.2)
+        .color(...this._cRot(0, () => 0.8 + audioVol * 0.3)) // Base liquid color
+        .colorama(() => audioBrilliance * 0.05)
         .blend(
-          osc(() => audioPresence * 30 + 10, 0.01)
-            .color(...this._c(() => 0.2 + audioHigh * 0.8)),
-          () => 0.1 + audioVol * 0.1
+          osc(() => 5 + audioHigh * 2, 0.1, () => audioLowMid * 0.5)
+            .color(...this._cRot(330, () => 0.6 + audioMid * 0.4)), // Analogous shifting highlights
+          0.3
         )
+        .rotate(() => time * 0.05)
     ).out(o0);
   }
 
@@ -310,14 +322,21 @@ export class HydraController {
     ).out(o0);
   }
 
-  // ── PRESET 12 · Silk Phase ────────────────────────────────────────
+  // ── PRESET 12 · Neon Laser Scanner ────────────────────────────────
   _p12_silkPhase() {
     this._s(
-      osc(() => audioBass * 15 + 5, 0.02, () => audioHigh * 0.2)
-        .diff(osc(() => audioMid * 15 + 5, 0.02, () => audioLowMid * 0.2))
-        .color(...this._c(() => 0.6 + audioBass * 0.4))
+      osc(() => 10 + audioMid * 5, 0.1, () => audioHigh * 1.5)
+        .thresh(0.8, 0.1) // Sharp laser lines
+        .color(...this._cRot(180, () => 1.0 + audioBeat * 0.5)) // Complementary bright flashes
+        .rotate(() => time * 0.1 + audioBass * 0.2)
+        .modulate(noise(5, 0.1), () => audioLowMid * 0.1)
         .kaleid(2)
-        .rotate(() => audioVol * 0.1, 0.005)
+        .add(
+          osc(() => 5 + audioHigh * 5, 0.1).thresh(0.9, 0.1)
+            .color(...this._cRot(120, () => 0.8 + audioMid * 0.3)) // Triadic alternate lasers
+            .rotate(() => -time * 0.15),
+          0.5
+        )
     ).out(o0);
   }
 
@@ -400,7 +419,7 @@ export class HydraController {
       .color(...this._cRot(120, () => 0.7 + audioMid * 0.5))
       .mult(
         shape(100, () => 0.48 + audioMid * 0.16, 0.08)
-          .sub(shape(100, 0.24, 0.08))
+          .diff(shape(100, 0.24, 0.08))
       );
 
     // Capa 3: Anillo Exterior (Reactivo 100% a Agudos)
@@ -411,7 +430,7 @@ export class HydraController {
       .color(...this._cRot(240, () => 0.7 + audioHigh * 0.5))
       .mult(
         shape(100, () => 0.72 + audioHigh * 0.12, 0.08)
-          .sub(shape(100, 0.48, 0.08))
+          .diff(shape(100, 0.48, 0.08))
       );
 
     // Fusionamos el halo con los tres círculos de colores reaccionando por separado
