@@ -373,19 +373,19 @@ export class HydraController {
   _p15_infiniteTunnel() {
     this._s(
       src(o0)
-        .scale(0.96) // Alejamiento fluido y constante
-        .rotate(0.012) // Giro constante tipo vórtice (sin aceleraciones bruscas)
+        .scale(() => 0.95 - audioBeat * 0.04) // Efecto de empuje (zoom) en cada golpe de bajo
+        .rotate(() => 0.012 + audioLowMid * 0.02) // Acelera el vórtice con la música
         .blend(
-          osc(20, 0.06, 0.9)
-            .kaleid(5) // Aspas constantes para un patrón fluido
-            .color(...this._c(() => 0.6 + audioMid * 0.4))
-            .rotate(() => time * 0.08) // Rotación constante
-            .modulate(osc(10).rotate(1.57), 0.05) // Ondulación constante
+          osc(() => 20 + audioMid * 8, 0.06, 0.9) // Añade estrías a las paredes del túnel
+            .kaleid(5)
+            .color(...this._cRot(0, () => 0.6 + audioHigh * 0.6)) // Destellos de luz en agudos
+            .rotate(() => time * 0.08 + audioBass * 0.1) // Giros bruscos reactivos
+            .modulate(osc(10).rotate(1.57), () => 0.05 + audioVol * 0.1) // Distorsión reactiva
             .add(
-              noise(() => 180 + audioBass * 50, 0.01).luma(0.4, 0.1), // Textura granulada reactiva
-              () => audioBass * 0.35 // Gránulos reactivos al bajo (más granulado al reaccionar)
+              noise(() => 180 + audioBass * 50, 0.01).luma(0.4, 0.1), 
+              () => 0.1 + audioBass * 0.5 // Gránulos más intensos
             ),
-          0.12 // Mezcla fluida y constante
+          () => 0.15 + audioHigh * 0.15 // Intensifica la mezcla en los agudos
         )
     ).out(o0);
   }
