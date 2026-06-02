@@ -185,22 +185,28 @@ export class HydraController {
   // ── PRESET 02 · Psychedelic Tide ──────────────────────────────────
   _p2_psychedelicTide() {
     this._s(
-      voronoi(() => audioMid * 5 + 3, 0.02, () => audioHigh * 1.5)
-        .modulateRotate(osc(() => audioBass * 5 + 2).rotate(() => audioLowMid * 2), () => audioBass * 0.4)
-        .kaleid(3)
-        .color(...this._c(() => 0.6 + audioBass * 0.4))
-        .blend(noise(2, 0.01), 0.05)
+      voronoi(() => 4 + audioMid * 4, 0.05)
+        .diff(osc(() => 2 + audioBass * 10, 0.1).rotate(() => audioLowMid * 0.5))
+        .kaleid(() => Math.round(audioHigh * 4) + 3)
+        .color(...this._cRot(180, () => 1.0 + audioBeat * 0.8)) // Strong complementary flash
+        .modulateScale(noise(3, 0.1), () => audioBass * 1.5) // Explosive reactive geometry
+        .blend(noise(() => 2 + audioBass * 3, 0.01), 0.1)
     ).out(o0);
   }
 
   // ── PRESET 03 · Astral Geometry ───────────────────────────────────
   _p3_astralGeometry() {
     this._s(
-      shape(4, () => 0.4 + audioHigh * 0.1, 0.02)
-        .modulate(noise(() => audioBass * 3 + 1, 0.02))
-        .kaleid(() => Math.round(audioMid * 3) + 2)
-        .color(...this._c(() => 0.5 + audioVol * 0.5))
-        .rotate(() => audioLowMid * 0.5, 0.01)
+      shape(4, 0.5, 0.1)
+        .repeat(3, 3)
+        .modulateScrollY(osc(() => 2 + audioBass * 15, 0.1), () => audioMid * 0.5)
+        .kaleid(4)
+        .color(...this._cRot(90, () => 1.0 + audioBeat * 0.5))
+        .add(
+          src(o0).scale(() => 0.9 - audioBass * 0.2).rotate(() => time * 0.2), 
+          () => 0.6 + audioVol * 0.2
+        )
+        .scale(() => 1.0 + audioBass * 0.5) // Violent zoom on bass
     ).out(o0);
   }
 
@@ -217,10 +223,11 @@ export class HydraController {
   // ── PRESET 05 · Ethereal Bloom ────────────────────────────────────
   _p5_etherealBloom() {
     this._s(
-      noise(() => audioSub * 2 + 1, 0.02)
-        .modulate(voronoi(() => audioMid * 4 + 2, 0.03), () => audioBass * 0.5)
-        .colorama(() => audioBrilliance * 0.15)
-        .color(...this._c(() => 0.5 + audioLowMid * 0.5))
+      noise(() => 2 + audioSub * 5, 0.05)
+        .modulatePixelate(voronoi(() => 5 + audioMid * 5, 0.05), () => 10 + audioBass * 100) // Huge pixelation bursts
+        .colorama(() => audioBrilliance * 0.5)
+        .color(...this._cRot(45, () => 1.2 + audioLowMid * 0.8))
+        .modulate(src(o0).scale(1.05), () => audioBass * 0.5) // Liquid feedback
     ).out(o0);
   }
 
@@ -296,29 +303,32 @@ export class HydraController {
     ).out(o0);
   }
 
-  // ── PRESET 10 · Liquid Gold Fluid ─────────────────────────────────
+  // ── PRESET 10 · CRT Glitch Scanlines ──────────────────────────────
   _p10_dreamScan() {
     this._s(
-      noise(() => 2 + audioSub * 0.5, 0.05)
-        .modulate(voronoi(() => 3 + audioMid * 2), () => 0.3 + audioBass * 0.2)
-        .color(...this._cRot(0, () => 0.8 + audioVol * 0.3)) // Base liquid color
-        .colorama(() => audioBrilliance * 0.05)
-        .blend(
-          osc(() => 5 + audioHigh * 2, 0.1, () => audioLowMid * 0.5)
-            .color(...this._cRot(330, () => 0.6 + audioMid * 0.4)), // Analogous shifting highlights
-          0.3
-        )
-        .rotate(() => time * 0.05)
+      src(o0)
+        .scrollX(() => (audioMid - 0.5) * 0.2 * audioBeat) // Glitch horizontal tears
+        .scrollY(() => time * 0.1) // Constant vertical scan
+        .modulate(osc(() => 20 + audioBass * 50, 0, () => audioMid * 1.5), () => audioBass * 0.1)
+        .color(...this._cRot(60, () => 1.0 + audioBrilliance * 2.0))
+        .add(osc(() => 100 + audioHigh * 200, 0.1).color(1, 1, 1).scale(1, 0.05).scrollY(() => time * -0.5), () => audioBeat * 0.8) // Flash scanline
     ).out(o0);
   }
 
-  // ── PRESET 11 · Velvet Shift ──────────────────────────────────────
+  // ── PRESET 11 · Orbital Solar Flares ──────────────────────────────
   _p11_velvetShift() {
     this._s(
-      noise(() => audioMid * 3 + 1, 0.015)
-        .modulateScrollY(osc(() => audioBass * 4, 0.02), () => audioLowMid * 0.2)
-        .color(...this._c(() => 0.5 + audioVol * 0.5))
-        .colorama(() => audioHigh * 0.05)
+      shape(100, 0.1, 0.9) // Giant core sphere
+        .scale(() => 1.0 + audioBass * 1.2)
+        .color(...this._cRot(0, () => 1.5 + audioMid * 1.0))
+        .modulateScale(osc(() => 5 + audioHigh * 10).rotate(() => time * 0.5), () => audioLowMid * 2.0)
+        .add(
+          shape(100, 0.02, 1.0)
+            .scale(() => 2.0 + audioSub * 2.5) // Outer expanding halo
+            .color(...this._cRot(30, () => audioHigh * 2.0)),
+          0.5
+        )
+        .rotate(() => time * 0.2 + audioBeatMid * 0.5)
     ).out(o0);
   }
 
@@ -390,52 +400,24 @@ export class HydraController {
     ).out(o0);
   }
 
-  // ── PRESET 16 · Holographic Sphere (Esfera Holográfica) ───────────
+  // ── PRESET 16 · 3D Audio Terrain ──────────────────────────────────
   _p16_reactiveSphere() {
-    // Generador de rejilla con ojo de pez en 3D y grano de semitono reactivo
-    const getGrainyGrid = (freqFunc, grainIntensityFunc) => osc(freqFunc, 0, 0.8)
-      .mult(osc(freqFunc, 0, 0.8).rotate(Math.PI / 2))
-      .modulateScale(shape(100, 0.9, 0.4), -0.85) // Abombamiento constante
-      .add(noise(220, 0.01).luma(0.4, 0.1), grainIntensityFunc) // Grano analógico/semitono
-      .rotate(() => time * 0.03); // Giro constante
-
-    // Halo de brillo ambiental de fondo que reacciona de forma fluida al volumen general
-    const halo = shape(100, 0.78, 0.35)
-      .color(...this._cRot(0, () => audioVol * 0.15));
-
-    // Capa 1: Núcleo (Reactivo 100% a Graves)
-    const core = getGrainyGrid(
-      () => 45 + audioBass * 15,
-      () => 0.08 + audioBass * 0.15
-    )
-      .color(...this._cRot(0, () => 0.7 + audioBass * 0.5))
-      .mult(shape(100, () => 0.22 + audioBass * 0.12, 0.08));
-
-    // Capa 2: Anillo Medio (Reactivo 100% a Medios)
-    const mid = getGrainyGrid(
-      () => 55 + audioMid * 18,
-      () => 0.08 + audioMid * 0.15
-    )
-      .color(...this._cRot(120, () => 0.7 + audioMid * 0.5))
-      .mult(
-        shape(100, () => 0.48 + audioMid * 0.16, 0.08)
-          .diff(shape(100, 0.24, 0.08))
-      );
-
-    // Capa 3: Anillo Exterior (Reactivo 100% a Agudos)
-    const high = getGrainyGrid(
-      () => 65 + audioHigh * 22,
-      () => 0.08 + audioHigh * 0.2
-    )
-      .color(...this._cRot(240, () => 0.7 + audioHigh * 0.5))
-      .mult(
-        shape(100, () => 0.72 + audioHigh * 0.12, 0.08)
-          .diff(shape(100, 0.48, 0.08))
-      );
-
-    // Fusionamos el halo con los tres círculos de colores reaccionando por separado
     this._s(
-      halo.add(core.add(mid).add(high))
+      shape(2, 0.01)
+        .repeat(20, 100)
+        .modulateScale(osc(10).rotate(Math.PI / 2), 0.5)
+        .modulateRepeat(osc(() => 10 + audioBass * 30), () => audioMid * 5.0)
+        .modulateScrollY(noise(() => 2 + audioBass * 5, 0.1), () => audioSub * 2.0)
+        .color(...this._cRot(180, () => 1.5 + audioHigh * 2.0))
+        .add(
+          noise(() => 3 + audioMid * 10, 0.1)
+            .color(...this._cRot(0, () => audioBass * 2.0))
+            .scrollY(() => time * 0.5),
+          0.3
+        )
+        .kaleid(2)
+        .scale(() => 1.2 + audioLowMid * 0.5)
+        .rotate(() => time * 0.1)
     ).out(o0);
   }
 }

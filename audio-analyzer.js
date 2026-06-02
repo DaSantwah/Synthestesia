@@ -177,7 +177,8 @@ export class AudioAnalyzer {
     if (this.audioContext && this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
     }
-    this._createAndStart(0, onEnded);
+    // Allow playing from the currently sought offset
+    this._createAndStart(this._startOffset || 0, onEnded);
   }
 
   /**
@@ -212,7 +213,8 @@ export class AudioAnalyzer {
   }
 
   get currentTime() {
-    if (!this.isPlaying || this.isMic) return 0;
+    if (this.isMic) return 0;
+    if (!this.isPlaying) return this._startOffset || 0;
     const elapsed = this.audioContext.currentTime - this._startedAt;
     return Math.min(this._startOffset + elapsed, this.duration);
   }

@@ -840,11 +840,13 @@ html, body {
 
 /* Control bar row */
 .cb-row {
-  height: 68px;
+  min-height: 68px;
+  height: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
+  justify-content: center;
+  padding: 12px 24px;
   gap: 16px;
 }
 
