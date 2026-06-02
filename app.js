@@ -67,10 +67,8 @@ const $micIndicator    = document.getElementById('mic-indicator');
 const $btnPlay         = document.getElementById('btn-play');
 const $btnStop         = document.getElementById('btn-stop');
 const $btnRecord       = document.getElementById('btn-record');
-const $btnDownload     = document.getElementById('btn-download');
-const $recIndicator    = document.getElementById('rec-indicator');
 const $recLabel        = document.getElementById('rec-label');
-
+const $btnDownload     = document.getElementById('btn-download');
 const $videoPreviewModal = document.getElementById('video-preview-modal');
 const $previewVideo      = document.getElementById('preview-video');
 const $btnDownloadModal  = document.getElementById('btn-download-modal');
