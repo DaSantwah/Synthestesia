@@ -201,176 +201,176 @@ export class HydraController {
     }
   }
 
-  // 1. Glitch Core - Destructive pixelation on beat
+  // 1. Glitch Core
   _p1_glitchCore() {
     this._s(
-      voronoi(() => 5 + audioBass * 2, () => Math.min(audioMid * 2, 5))
-        .modulatePixelate(noise(() => audioHigh * 2), () => 10 + audioBeat * 20)
-        .color(...this._c(() => 1 + audioBeat * 0.8)) // Flash on beat! Not constant blowout.
-        .diff(osc(() => 10 + audioBass * 5, 0.1, () => audioMid).rotate(() => audioHigh * 0.5))
+      voronoi(() => 5 + audioBass * 4, () => Math.min(audioMid * 2, 8))
+        .modulatePixelate(noise(() => Math.min(audioHigh * 4, 15)), () => 10 + Math.floor(audioBeat * 10))
+        .color(...this._c(() => 1 + audioBeat * 0.5)) 
+        .diff(osc(() => 10 + audioBass * 8, 0.1, () => Math.min(audioMid, 2)).rotate(() => audioHigh * 0.3))
     ).out(o0);
   }
 
-  // 2. Shatter Space - Sharp geometric shards
+  // 2. Shatter Space
   _p2_shatterSpace() {
     this._s(
       shape(4, 0.5)
-        .modulate(noise(() => 2 + audioBass * 2), () => audioMid * 1.5)
-        .colorama(() => audioHigh * 0.05)
-        .color(...this._cRot(90, () => 1 + audioVol * 0.5))
-        .kaleid(() => 2 + Math.floor(audioBeat * 2)) // Max 4 sides
+        .modulate(noise(() => 2 + audioBass * 3), () => Math.min(audioMid * 1.5, 4))
+        .colorama(() => Math.min(audioHigh * 0.05, 0.2))
+        .color(...this._cRot(90, () => 1 + Math.min(audioVol * 0.4, 0.8)))
+        .kaleid(() => 2 + Math.floor(audioBeat * 2))
     ).out(o0);
   }
 
-  // 3. Laser Grid - Extreme scanlines
+  // 3. Laser Grid
   _p3_laserGrid() {
     this._s(
-      osc(50, 0.05, () => audioHigh * 2)
-        .thresh(() => 0.6 - audioBeat * 0.3)
-        .modulateScrollY(osc(10).rotate(Math.PI/2), () => audioBass * 1.5)
+      osc(50, 0.05, () => Math.min(audioHigh * 2, 10))
+        .thresh(() => Math.max(0.1, 0.8 - audioBeat * 0.3))
+        .modulateScrollY(osc(10).rotate(Math.PI/2), () => Math.min(audioBass * 1.5, 4))
         .color(...this._c())
-        .add(src(o0).scale(0.95).luma(0.1), () => audioMid)
+        .add(src(o0).scale(0.95).luma(0.1), () => Math.min(audioMid, 1.5))
     ).out(o0);
   }
 
-  // 4. Hyper Drive - Accelerating tunnel
+  // 4. Hyper Drive
   _p4_hyperDrive() {
     this._s(
       shape(3, 0.1)
-        .repeat(() => 2 + audioBass * 3, () => 2 + audioMid * 3)
-        .modulateRotate(noise(() => audioVol * 2), () => audioHigh)
-        .color(...this._cRot(45, () => 1 + audioBeat * 1.5))
+        .repeat(() => 2 + audioBass * 4, () => 2 + audioMid * 4)
+        .modulateRotate(noise(() => Math.min(audioVol * 2, 8)), () => Math.min(audioHigh, 3))
+        .color(...this._cRot(45, () => 1 + audioBeat * 1.2))
         .scrollX(() => time * 2)
     ).out(o0);
   }
 
-  // 5. Neon Spike - Sharp spikes and inverts
+  // 5. Neon Spike
   _p5_neonSpike() {
     this._s(
       voronoi(10, 2)
-        .thresh(() => 0.5 - audioBass * 0.2)
-        .modulateScale(osc(() => audioMid * 5), () => audioHigh * 2)
+        .thresh(() => Math.max(0.1, 0.5 - audioBass * 0.15))
+        .modulateScale(osc(() => Math.min(audioMid * 5, 20)), () => Math.min(audioHigh * 2, 6))
         .color(...this._c())
-        .invert(() => audioBeat > 0.8 ? 1 : 0) // Strict strobe invert
+        .invert(() => audioBeat > 0.8 ? 1 : 0)
     ).out(o0);
   }
 
-  // 6. Acid Burn - Liquid melting distortion
+  // 6. Acid Burn
   _p6_acidBurn() {
     this._s(
-      osc(() => 10 + audioBass * 10, 0.1, () => audioMid * 2)
-        .colorama(() => time * 0.2 + audioVol * 0.1)
-        .modulate(voronoi(() => audioHigh * 5), () => audioBass)
+      osc(() => 10 + audioBass * 8, 0.1, () => Math.min(audioMid * 2, 5))
+        .colorama(() => time * 0.2 + Math.min(audioVol * 0.1, 0.5))
+        .modulate(voronoi(() => Math.min(audioHigh * 5, 20)), () => Math.min(audioBass, 3))
         .color(...this._cRot(180, () => 1.5))
     ).out(o0);
   }
 
-  // 7. Cyber Scan - Thick scanning lines overriding pixels
+  // 7. Cyber Scan
   _p7_cyberScan() {
     this._s(
-      shape(2, () => 0.1 + audioBass * 0.2)
-        .scale(() => 1, () => 0.05 + audioMid * 0.1)
+      shape(2, () => Math.min(0.1 + audioBass * 0.2, 0.8))
+        .scale(() => 1, () => Math.min(0.05 + audioMid * 0.1, 0.5))
         .scrollY(() => time * 2 + audioBeat * 0.5)
-        .modulatePixelate(noise(5), () => 100 - audioHigh * 50)
+        .modulatePixelate(noise(5), () => 200 / (1 + audioHigh * 5)) // Division prevents negatives
         .color(...this._c())
     ).out(o0);
   }
 
-  // 8. Chroma Tear - Color separation and noise
+  // 8. Chroma Tear
   _p8_chromaTear() {
     this._s(
-      noise(() => 5 + audioBass * 5)
-        .modulate(osc(10).rotate(1.57), () => audioMid * 1.5)
-        .colorama(() => audioHigh * 0.2)
-        .color(...this._cRot(120, () => 1 + audioVol * 0.5))
+      noise(() => 5 + audioBass * 6)
+        .modulate(osc(10).rotate(1.57), () => Math.min(audioMid * 1.5, 4))
+        .colorama(() => Math.min(audioHigh * 0.2, 0.8))
+        .color(...this._cRot(120, () => 1 + Math.min(audioVol * 0.4, 1.0)))
     ).out(o0);
   }
 
-  // 9. Void Vortex - Endless inward geometric spiral
+  // 9. Void Vortex
   _p9_voidVortex() {
     this._s(
       shape(100, 0.5)
-        .modulateRotate(noise(() => audioBass * 2), () => audioMid * 2)
-        .kaleid(() => 3 + Math.floor(audioHigh * 4))
+        .modulateRotate(noise(() => Math.min(audioBass * 3, 10)), () => Math.min(audioMid * 2, 5))
+        .kaleid(() => 3 + Math.floor(Math.min(audioHigh * 2, 4)))
         .color(...this._c())
-        .diff(src(o0).scale(() => 0.9 - audioBeat * 0.1).rotate(0.1))
+        .diff(src(o0).scale(() => Math.max(0.7, 0.9 - audioBeat * 0.1)).rotate(0.1))
     ).out(o0);
   }
 
-  // 10. Data Breach - Extreme pixel blockiness
+  // 10. Data Breach
   _p10_dataBreach() {
     this._s(
-      osc(() => 10 + audioBass * 20, 0.2, () => audioMid)
+      osc(() => 10 + audioBass * 15, 0.2, () => Math.min(audioMid, 3))
         .thresh(0.4)
-        .modulatePixelate(osc(10, 0, 0), () => 10 + audioHigh * 40)
-        .color(...this._cRot(60, () => 1 + audioVol * 0.8))
+        .modulatePixelate(osc(10, 0, 0), () => 10 + Math.min(audioHigh * 20, 80))
+        .color(...this._cRot(60, () => 1 + Math.min(audioVol * 0.5, 1.0)))
     ).out(o0);
   }
 
-  // 11. Wire Rupture - Shredded wireframes
+  // 11. Wire Rupture
   _p11_wireRupture() {
     this._s(
-      voronoi(() => audioHigh * 10, 0.0)
-        .thresh(() => 0.7 - audioBass * 0.3)
-        .modulate(noise(2), () => audioMid * 1.5)
+      voronoi(() => Math.min(audioHigh * 10, 30), 0.0)
+        .thresh(() => Math.max(0.1, 0.7 - audioBass * 0.2))
+        .modulate(noise(2), () => Math.min(audioMid * 1.5, 5))
         .color(...this._c())
         .invert(() => audioBeat)
     ).out(o0);
   }
 
-  // 12. Plasma Storm - Expanding chaotic noise
+  // 12. Plasma Storm
   _p12_plasmaStorm() {
     this._s(
-      noise(() => 3 + audioMid * 5, 0.2)
-        .modulateScale(osc(5), () => audioBass * 2)
-        .colorama(() => audioHigh * 0.1)
-        .color(...this._cRot(200, () => 1 + audioVol * 0.8))
+      noise(() => 3 + Math.min(audioMid * 5, 20), 0.2)
+        .modulateScale(osc(5), () => Math.min(audioBass * 2, 6))
+        .colorama(() => Math.min(audioHigh * 0.1, 0.5))
+        .color(...this._cRot(200, () => 1 + Math.min(audioVol * 0.5, 1.0)))
     ).out(o0);
   }
 
-  // 13. Geo Melt - Repeating fractured shapes
+  // 13. Geo Melt
   _p13_geoMelt() {
     this._s(
-      shape(() => 3 + Math.floor(audioHigh * 3), 0.3)
+      shape(() => 3 + Math.floor(Math.min(audioHigh * 2, 4)), 0.3)
         .repeat(3, 3)
-        .modulate(voronoi(2), () => audioBass * 2)
+        .modulate(voronoi(2), () => Math.min(audioBass * 2, 6))
         .color(...this._c())
-        .add(src(o0).scrollY(() => audioMid * 0.2).luma(0.2))
+        .add(src(o0).scrollY(() => Math.min(audioMid * 0.2, 0.8)).luma(0.2))
     ).out(o0);
   }
 
-  // 14. Strobe Matrix - Sharp diagonal beams
+  // 14. Strobe Matrix
   _p14_strobeMatrix() {
     this._s(
       osc(() => 20 + audioBass * 10, 0.1, 0)
         .rotate(Math.PI/4)
-        .thresh(() => 0.5 + Math.sin(time*10)*0.2)
-        .color(...this._cRot(90, () => 1 + audioBeat * 2)) // bright flashes
-        .modulate(noise(() => audioHigh * 5), () => audioMid * 0.5)
+        .thresh(() => Math.max(0.1, 0.5 + Math.sin(time*10)*0.2 - audioBeat*0.2))
+        .color(...this._cRot(90, () => 1 + audioBeat * 1.5))
+        .modulate(noise(() => Math.min(audioHigh * 5, 15)), () => Math.min(audioMid * 0.5, 2))
     ).out(o0);
   }
 
-  // 15. Bass Crush - Heavy pixelation destroying smooth shapes
+  // 15. Bass Crush
   _p15_bassCrush() {
     this._s(
       shape(4, 0.8)
-        .modulatePixelate(noise(5), () => 100 - Math.min(audioBass * 90, 95))
-        .colorama(() => audioMid * 0.05)
+        .modulatePixelate(noise(5), () => 100 / (1 + audioBass * 3)) // prevents negative blocks
+        .colorama(() => Math.min(audioMid * 0.05, 0.3))
         .color(...this._c())
-        .kaleid(() => 1 + Math.floor(audioHigh * 3))
+        .kaleid(() => 1 + Math.floor(Math.min(audioHigh * 2, 3)))
     ).out(o0);
   }
 
-  // 16. System Collapse - Layers glitching over each other
+  // 16. System Collapse
   _p16_systemCollapse() {
     this._s(
       src(o0)
-        .modulate(noise(() => audioMid * 5), () => audioBass * 0.2)
+        .modulate(noise(() => Math.min(audioMid * 5, 20)), () => Math.min(audioBass * 0.2, 0.8))
         .layer(
           shape(4, 0.1)
             .luma()
-            .color(...this._cRot(180, () => 1 + audioVol * 1.5))
-            .scale(() => 0.5 + audioHigh)
+            .color(...this._cRot(180, () => 1 + Math.min(audioVol * 1.0, 2.0)))
+            .scale(() => 0.5 + Math.min(audioHigh, 3))
             .scrollY(() => time * 0.5)
         )
         .blend(noise(3).color(1,1,1), 0.02)

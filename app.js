@@ -247,7 +247,7 @@ function loop() {
   const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
 
   // Core bands (linear and slightly boosted, avoiding extreme blowouts)
-  const power = sens * 1.5;
+  const power = sens;
   window.audioBass = analyzer.bass * power;
   window.audioMid  = analyzer.mid * power;
   window.audioHigh = analyzer.high * power;
