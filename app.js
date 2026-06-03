@@ -53,7 +53,6 @@ const $app             = document.getElementById('app');
 const $btnWarningAccept= document.getElementById('btn-warning-accept');
 
 const $hydraCanvas     = document.getElementById('hydra-canvas');
-const $specCanvas      = document.getElementById('spectrum-canvas');
 const $uploadScreen    = document.getElementById('upload-screen');
 const $controlBar      = document.getElementById('control-bar');
 const $colorPanel      = document.getElementById('color-panel');
@@ -102,11 +101,9 @@ const $sliderLum       = document.getElementById('slider-lum');
 const $hueValue        = document.getElementById('hue-value');
 const $satValue        = document.getElementById('sat-value');
 const $lumValue        = document.getElementById('lum-value');
-const $colorPresetBtns = document.querySelectorAll('.color-preset-btn');
 const $seekBar         = document.getElementById('seek-bar');
 const $seekFill        = document.getElementById('seek-bar-fill');
 
-const specCtx = $specCanvas.getContext('2d');
 let animFrameId = null;
 let spectrumFrameCount = 0;
 let _onEndedRef = null;   // stored for seek re-use
@@ -249,58 +246,28 @@ function loop() {
 
   const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
 
-  // Core bands scaled by sensitivity and smoothly bounded to prevent visual chaos
-  window.audioBass = Math.min(analyzer.bass * sens, 1.8);
-  window.audioMid  = Math.min(analyzer.mid * sens, 1.5);
-  window.audioHigh = Math.min(analyzer.high * sens, 1.5);
-  window.audioVol  = Math.min(analyzer.overall * sens, 2.0);
+  // Core bands scaled exponentially by sensitivity (no limits)
+  window.audioBass = analyzer.bass * sens * sens * 1.5;
+  window.audioMid  = analyzer.mid * sens * sens * 1.5;
+  window.audioHigh = analyzer.high * sens * sens * 1.5;
+  window.audioVol  = analyzer.overall * sens * sens * 1.5;
 
-  // Extended bands scaled by sensitivity and bounded
-  window.audioSub        = Math.min(analyzer.sub * sens, 2.0);
-  window.audioLowMid     = Math.min(analyzer.lowMid * sens, 1.6);
-  window.audioPresence   = Math.min(analyzer.presence * sens, 1.6);
-  window.audioBrilliance = Math.min(analyzer.brilliance * sens, 1.8);
+  // Extended bands
+  window.audioSub        = analyzer.sub * sens * sens * 1.5;
+  window.audioLowMid     = analyzer.lowMid * sens * sens * 1.5;
+  window.audioPresence   = analyzer.presence * sens * sens * 1.5;
+  window.audioBrilliance = analyzer.brilliance * sens * sens * 1.5;
 
   // Beat transient triggers (not directly scaled to preserve 0.0 - 1.0 normalization)
   window.audioBeat       = analyzer.bassBeat;
   window.audioBeatMid    = analyzer.midBeat;
 
-  // Throttle visual spectrum to 30 FPS
-  if (loopFrameCount % 2 === 0) {
-    drawSpectrum();
-  }
+
   
   // Throttle slower UI updates to 10 FPS (saves CPU layout paints!)
   if (loopFrameCount % 6 === 0) {
     updateTime();
     updateSeekBar();
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// SPECTRUM
-// ════════════════════════════════════════════════════════════════════
-function drawSpectrum() {
-  const data = analyzer.getFullSpectrum();
-  if (!data) return;
-
-  const W = $specCanvas.width;
-  const H = $specCanvas.height;
-  specCtx.clearRect(0, 0, W, H);
-
-  const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
-  const BAR_COUNT = 60;
-  const step  = Math.floor(data.length / BAR_COUNT);
-  const barW  = W / BAR_COUNT;
-
-  for (let i = 0; i < BAR_COUNT; i++) {
-    const val  = (data[i * step] / 255) * sens;
-    const barH = val * H;
-    const hueShift = (window.colorH + i * 0.9) % 360;
-    const sat  = window.colorS - i * 0.45;
-    const lum  = window.colorL + i * 0.22;
-    specCtx.fillStyle = `hsla(${hueShift}, ${sat}%, ${lum}%, 0.85)`;
-    specCtx.fillRect(i * barW, H / 2 - barH / 2, Math.max(barW - 1, 1), barH);
   }
 }
 
@@ -402,7 +369,8 @@ $btnMicStart.addEventListener('click', async () => {
 function showPlayer(isMic) {
   $uploadScreen.classList.add('hidden');
   $controlBar.classList.remove('hidden');
-  $specCanvas.classList.add('visible');
+  $hydraCanvas.classList.add('visible');
+  if (hydraCtrl && typeof hydraCtrl.applyPreset === 'function') hydraCtrl.applyPreset(hydraCtrl.currentPreset || 0);
   $colorPanel.classList.add('hidden');
   $btnPlay.disabled = isMic;
   $btnStop.disabled = false;
@@ -666,27 +634,42 @@ $sliderLum.addEventListener('input', (e) => {
   hydraCtrl.applyPreset(hydraCtrl.currentPreset);
 });
 
-const evaColorPresets = {
-  'eva-purple': { h: 270, s: 85, l: 50 },
-  'lcl-green':  { h: 130, s: 75, l: 45 },
-  'ui-amber':   { h: 38,  s: 95, l: 55 },
-  'at-cyan':    { h: 190, s: 80, l: 50 },
-  'blood-red':  { h: 0,   s: 100, l: 45 },
-};
+// HEX to HSL converter
+function hexToHSL(H) {
+  let r = 0, g = 0, b = 0;
+  if (H.length === 4) {
+    r = "0x" + H[1] + H[1]; g = "0x" + H[2] + H[2]; b = "0x" + H[3] + H[3];
+  } else if (H.length === 7) {
+    r = "0x" + H[1] + H[2]; g = "0x" + H[3] + H[4]; b = "0x" + H[5] + H[6];
+  }
+  r /= 255; g /= 255; b /= 255;
+  let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin, h = 0, s = 0, l = 0;
+  if (delta === 0) h = 0;
+  else if (cmax === r) h = ((g - b) / delta) % 6;
+  else if (cmax === g) h = (b - r) / delta + 2;
+  else h = (r - g) / delta + 4;
+  h = Math.round(h * 60);
+  if (h < 0) h += 360;
+  l = (cmax + cmin) / 2;
+  s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+  s = +(s * 100).toFixed(1);
+  l = +(l * 100).toFixed(1);
+  return { h, s, l };
+}
 
-$colorPresetBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const p = evaColorPresets[btn.dataset.color];
-    if (!p) return;
-    window.colorH = p.h; window.colorS = p.s; window.colorL = p.l;
-    $sliderHue.value = p.h; $sliderSat.value = p.s; $sliderLum.value = p.l;
-    $hueValue.textContent = `${p.h}°`;
-    $satValue.textContent = `${p.s}%`;
-    $lumValue.textContent = `${p.l}%`;
+const $colorPicker = document.getElementById('color-picker');
+if ($colorPicker) {
+  $colorPicker.addEventListener('input', (e) => {
+    const hsl = hexToHSL(e.target.value);
+    window.colorH = hsl.h; window.colorS = hsl.s; window.colorL = hsl.l;
+    $sliderHue.value = hsl.h; $sliderSat.value = hsl.s; $sliderLum.value = hsl.l;
+    $hueValue.textContent = `${hsl.h}°`;
+    $satValue.textContent = `${hsl.s}%`;
+    $lumValue.textContent = `${hsl.l}%`;
     updateColorPreview();
     hydraCtrl.applyPreset(hydraCtrl.currentPreset);
   });
-});
+}
 
 updateColorPreview();
 
@@ -778,7 +761,7 @@ $btnReset.addEventListener('click', () => {
   $videoPreviewModal.classList.add('hidden');
   $colorPanel.classList.add('hidden');
   $customPanel.classList.add('hidden');
-  $specCanvas.classList.remove('visible');
+  
   $recIndicator.classList.add('hidden');
   $midiIndicator.classList.add('hidden');
   $micIndicator.classList.add('hidden');

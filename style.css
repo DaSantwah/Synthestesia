@@ -275,20 +275,6 @@ html, body {
   display: block;
 }
 
-/* ── Mini Spectrum ─────────────────────────────────────────────── */
-#spectrum-canvas {
-  position: fixed;
-  bottom: 112px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  opacity: 0;
-  pointer-events: none;
-  border-radius: var(--r);
-  transition: opacity 0.5s ease;
-}
-#spectrum-canvas.visible { opacity: 0.7; }
-
 /* ══ UPLOAD SCREEN ═════════════════════════════════════════════════ */
 #upload-screen {
   position: fixed;
@@ -586,24 +572,32 @@ html, body {
   color: var(--muted);
 }
 .preset-buttons { display: flex; gap: 6px; }
-.color-preset-btn {
-  flex: 1;
-  height: 28px;
-  border: 1px solid rgba(255,255,255,0.08);
+
+.color-wheel {
+  width: 50px;
+  height: 50px;
+  border: none;
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.color-preset-btn[data-color="eva-purple"] { background: hsl(270, 85%, 50%); }
-.color-preset-btn[data-color="lcl-green"]  { background: hsl(130, 75%, 45%); }
-.color-preset-btn[data-color="ui-amber"]   { background: hsl(38, 95%, 55%);  }
-.color-preset-btn[data-color="at-cyan"]    { background: hsl(190, 80%, 50%); }
-.color-preset-btn[data-color="blood-red"]  { background: hsl(0, 100%, 45%);  }
-.color-preset-btn:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: scale(1.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+.color-wheel::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-wheel::-webkit-color-swatch {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.color-wheel:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px var(--accent);
 }
 
 /* ══ CUSTOM PRESET (LIVE CODE) PANEL ═══════════════════════════════ */
@@ -1163,7 +1157,6 @@ html, body {
   .cb-center { justify-content: center; }
   .cb-right { justify-content: center; width: 100%; gap: 8px; }
   .divider { display: none; }
-  #spectrum-canvas { bottom: 180px; }
 }
 
 @media (max-width: 640px) {

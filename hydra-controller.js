@@ -170,264 +170,211 @@ export class HydraController {
     this.currentPreset = ((index % this.numPresets) + this.numPresets) % this.numPresets;
 
     const presets = [
-      this._p1_coreReactor,
-      this._p2_atFieldFractal,
-      this._p3_dataStream,
-      this._p4_tacticalScope,
-      this._p5_gridGlitch,
-      this._p6_evaSyncWaves,
-      this._p7_lclEcho,
-      this._p8_radarSweep,
-      this._p9_topoMap,
-      this._p10_crtScanlines,
-      this._p11_orbitalHalo,
-      this._p12_neonLaser,
-      this._p13_geometryVortex,
-      this._p14_hyperWarp,
-      this._p15_infiniteTunnel,
-      this._p16_wireframeSphere,
+      this._p1_glitchCore,
+      this._p2_shatterSpace,
+      this._p3_laserGrid,
+      this._p4_hyperDrive,
+      this._p5_neonSpike,
+      this._p6_acidBurn,
+      this._p7_cyberScan,
+      this._p8_chromaTear,
+      this._p9_voidVortex,
+      this._p10_dataBreach,
+      this._p11_wireRupture,
+      this._p12_plasmaStorm,
+      this._p13_geoMelt,
+      this._p14_strobeMatrix,
+      this._p15_bassCrush,
+      this._p16_systemCollapse
     ];
+    
+    solid(0, 0, 0, 1).out(o0);
+    solid(0, 0, 0, 1).out(o1);
+    solid(0, 0, 0, 1).out(o2);
+    solid(0, 0, 0, 1).out(o3);
 
-    presets[this.currentPreset].call(this);
+    try {
+      presets[this.currentPreset].bind(this)();
+    } catch (err) {
+      console.warn("Preset error:", err);
+      solid(0, 0, 0, 1).out(o0);
+    }
   }
 
-  // ── PRESET 01 · Core Reactor (Geometría Sólida) ───────────────────
-  _p1_coreReactor() {
+  // 1. Glitch Core
+  _p1_glitchCore() {
     this._s(
-      shape(100, () => 0.2 + audioBass * 0.1, 0.01) // Esfera dura central, escala controlada
-        .color(...this._cRot(0, () => 1.5 + audioMid * 1.5))
-        .modulateScale(osc(10).rotate(1.57), () => audioBass * 0.5)
-        .add(
-          shape(4, 0.4, 0.01) // Cuadrado afilado de fondo
-            .rotate(() => time * 0.2)
-            .color(...this._cRot(180, () => audioHigh * 1.5))
-            .repeat(2, 2)
-            .kaleid(2),
-          0.3
-        )
-    ).out(o0);
+      voronoi(() => 5 + audioBass * 10, () => audioMid * 2)
+        .modulatePixelate(noise(() => audioHigh * 5), () => 10 + audioBeat * 50)
+        .color(...this._c(() => 1 + audioVol))
+        .diff(osc(() => 20 + audioBass * 50, 0.1, () => audioMid * 5).rotate(() => audioHigh))
+    ).out();
   }
 
-  // ── PRESET 02 · AT-Field Fractal (Hexágonos Absolutos) ────────────
-  _p2_atFieldFractal() {
+  // 2. Shatter Space
+  _p2_shatterSpace() {
     this._s(
-      voronoi(5, 0.0) // Voronoi duro, bordes geométricos
-        .thresh(0.5, 0.1) // Blanco/negro muy afilado
-        .kaleid(6) // Simetría hexagonal
-        .color(...this._cRot(45, () => 1.2 + audioBeat * 1.5))
-        .modulate(osc(15).rotate(() => time * 0.1), () => audioLowMid * 0.4)
-        .scale(() => 1.0 + audioBass * 0.2) // Escala moderada
-    ).out(o0);
+      shape(4, 0.5)
+        .modulate(noise(() => 2 + audioBass * 4), () => audioMid * 2)
+        .colorama(() => audioHigh * 0.1)
+        .color(...this._cRot(90, () => audioVol * 2))
+        .kaleid(() => 2 + Math.floor(audioBeat * 4))
+    ).out();
   }
 
-  // ── PRESET 03 · Data Stream (Cascada Matrix Táctica) ──────────────
-  _p3_dataStream() {
+  // 3. Laser Grid
+  _p3_laserGrid() {
     this._s(
-      shape(4, 0.01, 0)
-        .scale(1, 20) // Líneas verticales afiladas
-        .repeat(30, 1)
-        .color(...this._cRot(90, () => 1.0 + audioHigh * 1.0))
-        .scrollY(() => time * 1.5 + audioMid * 2.0) // Lluvia rápida
-        .modulate(noise(3, 0).scrollX(0.5), () => audioBass * 0.3)
-        .add(
-          src(o0).scale(1.01).luma(0.2), // Ligeras estelas
-          0.4
-        )
-    ).out(o0);
+      osc(50, 0.05, () => audioHigh * 2)
+        .thresh(() => 0.8 - audioBeat * 0.4)
+        .modulateScrollY(osc(10).rotate(Math.PI/2), () => audioBass * 3)
+        .color(...this._c())
+        .add(src(o0).scale(0.9).luma(0.1), () => audioMid)
+    ).out();
   }
 
-  // ── PRESET 04 · Tactical Scope (Anillos Concéntricos Rígidos) ─────
-  _p4_tacticalScope() {
+  // 4. Hyper Drive
+  _p4_hyperDrive() {
     this._s(
-      shape(100, 0.1, 0.01) // Anillo fino
-        .repeat(4, 4)
-        .modulateScale(osc(8).rotate(1.57), () => audioMid * 0.8)
-        .color(...this._cRot(15, () => 0.8 + audioVol * 1.0))
-        .add(
-          shape(100, () => 0.5 + audioBass * 0.3, 0.001) // Anillo externo perimetral
-            .color(...this._cRot(180, () => 0.5 + audioBeat * 1.0)),
-          0.5
-        )
-    ).out(o0);
+      shape(3, 0.1)
+        .repeat(() => 2 + audioBass * 10, () => 2 + audioMid * 10)
+        .modulateRotate(noise(() => audioVol * 5), () => audioHigh * 3)
+        .color(...this._cRot(45, () => audioBeat * 3 + 0.5))
+        .scrollX(() => time * 2)
+    ).out();
   }
 
-  // ── PRESET 05 · Grid Glitch (Fallos de Matriz) ────────────────────
-  _p5_gridGlitch() {
+  // 5. Neon Spike
+  _p5_neonSpike() {
     this._s(
-      osc(20, 0, () => audioMid * 2.0)
-        .thresh(0.4, 0) // Bandas afiladas
-        .mult(osc(20, 0).rotate(1.57).thresh(0.4, 0)) // Cruces puras
-        .color(...this._cRot(120, () => 1.2 + audioHigh * 0.8))
-        .scrollX(() => (audioBeatMid > 0.5 ? Math.random() * 0.1 : 0)) // Glitch horizontal en beats
-        .scrollY(() => (audioBeat > 0.5 ? Math.random() * 0.1 : 0))
-    ).out(o0);
+      voronoi(10, 2)
+        .thresh(() => 0.5 - audioBass * 0.3)
+        .modulateScale(osc(() => audioMid * 20), () => audioHigh * 5)
+        .color(...this._c())
+        .invert(() => audioBeat > 0.5 ? 1 : 0)
+    ).out();
   }
 
-  // ── PRESET 06 · EVA Sync Waves (Afilado) ──────────────────────────
-  _p6_evaSyncWaves() {
+  // 6. Acid Burn
+  _p6_acidBurn() {
     this._s(
-      osc(() => 20 + audioMid * 20, 0.05, () => audioHigh * 2)
-        .thresh(0.5, 0.05) // Bordes definidos
-        .modulateRotate(osc(10).rotate(() => audioBass * 1.5), () => audioBass * 0.5)
-        .color(...this._cRot(300, () => 1.0 + audioBeat * 0.8))
-        .kaleid(() => Math.round(audioHigh * 4) + 3) // Formas de 3 a 7 lados
-        .scale(0.8)
-    ).out(o0);
+      osc(() => 10 + audioBass * 20, 0.1, () => audioMid * 5)
+        .colorama(() => time * 0.5 + audioVol)
+        .modulate(voronoi(() => audioHigh * 10), () => audioBass * 2)
+        .color(...this._cRot(180, () => 2))
+    ).out();
   }
 
-  // ── PRESET 07 · LCL Echo (Fractal Afilado) ────────────────────────
-  _p7_lclEcho() {
+  // 7. Cyber Scan
+  _p7_cyberScan() {
+    this._s(
+      shape(2, () => 0.1 + audioBass * 0.5)
+        .scale(() => 1, () => 0.05 + audioMid * 0.2)
+        .scrollY(() => time * 2 + audioBeat * 0.5)
+        .modulatePixelate(noise(5), () => 100 - audioHigh * 90)
+        .color(...this._c())
+    ).out();
+  }
+
+  // 8. Chroma Tear
+  _p8_chromaTear() {
+    this._s(
+      noise(() => 5 + audioBass * 15)
+        .modulate(osc(10).rotate(1.57), () => audioMid * 3)
+        .colorama(() => audioHigh * 0.5)
+        .color(...this._cRot(120, () => audioVol * 1.5))
+    ).out();
+  }
+
+  // 9. Void Vortex
+  _p9_voidVortex() {
+    this._s(
+      shape(100, 0.5)
+        .modulateRotate(noise(() => audioBass * 5), () => audioMid * 5)
+        .kaleid(() => 3 + Math.floor(audioHigh * 10))
+        .color(...this._c())
+        .diff(src(o0).scale(() => 0.9 - audioBeat * 0.2))
+    ).out();
+  }
+
+  // 10. Data Breach
+  _p10_dataBreach() {
+    this._s(
+      osc(() => audioBass * 50, 0.2, () => audioMid * 2)
+        .thresh(0.4)
+        .modulatePixelate(osc(10, 0, 0), () => audioHigh * 50)
+        .color(...this._cRot(60, () => audioVol))
+    ).out();
+  }
+
+  // 11. Wire Rupture
+  _p11_wireRupture() {
+    this._s(
+      voronoi(() => audioHigh * 20, 0.0)
+        .thresh(() => 0.7 - audioBass * 0.5)
+        .modulate(noise(2), () => audioMid * 3)
+        .color(...this._c())
+        .invert(() => audioBeat)
+    ).out();
+  }
+
+  // 12. Plasma Storm
+  _p12_plasmaStorm() {
+    this._s(
+      noise(() => 3 + audioMid * 10, 0.2)
+        .modulateScale(osc(5), () => audioBass * 5)
+        .colorama(() => audioHigh * 0.2)
+        .color(...this._cRot(200, () => audioVol * 2))
+    ).out();
+  }
+
+  // 13. Geo Melt
+  _p13_geoMelt() {
+    this._s(
+      shape(() => 3 + Math.floor(audioHigh * 4), 0.3)
+        .repeat(3, 3)
+        .modulate(voronoi(2), () => audioBass * 4)
+        .color(...this._c())
+        .add(src(o0).scrollY(() => audioMid * 0.5).luma(0.2))
+    ).out();
+  }
+
+  // 14. Strobe Matrix
+  _p14_strobeMatrix() {
+    this._s(
+      osc(() => 20 + audioBass * 20, 0.1, 0)
+        .rotate(Math.PI/4)
+        .thresh(() => 0.5 + Math.sin(time*10)*0.4)
+        .color(...this._cRot(90, () => audioBeat * 5))
+        .modulate(noise(() => audioHigh * 10), () => audioMid)
+    ).out();
+  }
+
+  // 15. Bass Crush
+  _p15_bassCrush() {
+    this._s(
+      shape(4, 0.8)
+        .modulatePixelate(noise(5), () => 200 - audioBass * 180)
+        .colorama(() => audioMid * 0.1)
+        .color(...this._c())
+        .kaleid(() => 1 + Math.floor(audioHigh * 5))
+    ).out();
+  }
+
+  // 16. System Collapse
+  _p16_systemCollapse() {
     this._s(
       src(o0)
-        .scale(() => 0.95 - audioBass * 0.05) // Feedback estricto, no expande
-        .rotate(() => audioMid * 0.1)
-        .blend(
-          shape(3, 0.3, 0.01) // Triángulos fuertes
-            .color(...this._cRot(75, () => 1.5 + audioVol * 1.0))
-            .scrollX(() => audioLowMid * 0.1)
-            .scrollY(() => audioHigh * -0.1),
-          () => 0.2 + audioBeat * 0.2
+        .modulate(noise(() => audioMid * 10), () => audioBass * 0.5)
+        .layer(
+          shape(4, 0.1)
+            .luma()
+            .color(...this._cRot(180, () => audioVol * 3))
+            .scale(() => 0.5 + audioHigh * 2)
+            .scrollY(() => time)
         )
-    ).out(o0);
-  }
-
-  // ── PRESET 08 · Radar Sweep (Reemplazo absoluto del 08 antiguo) ───
-  _p8_radarSweep() {
-    this._s(
-      osc(10, 0.1, 0.5) // Línea rotativa principal (Sweep)
-        .thresh(0.8, 0.05)
-        .color(...this._cRot(210, () => 2.0 + audioHigh * 1.0))
-        .rotate(() => time * 1.0 + audioLowMid * 0.5)
-        .mult(
-          shape(100, 0.8, 0.02) // Límite del radar circular
-            .color(1, 1, 1)
-        )
-        .add(
-          shape(4, 0.05, 0) // Targets encontrados (Glitches poligonales)
-            .repeat(8, 8)
-            .color(...this._cRot(30, () => audioBeat * 2.5)) // Solo visibles al golpear bajo
-            .modulate(noise(5, 0.1).scrollX(1)),
-          0.6
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 09 · Topo Map (Mapas de Relieve Holográfico) ───────────
-  _p9_topoMap() {
-    this._s(
-      noise(4, 0.05) // Base topográfica
-        .thresh(() => 0.4 - audioBass * 0.1, 0.02) // Líneas de contorno cortadas
-        .color(...this._cRot(340, () => 1.0 + audioMid * 1.5))
-        .modulate(osc(10).rotate(1.57), () => audioBass * 0.2)
-        .scrollY(() => time * 0.2)
-        .add(
-          src(o0).scale(1.02).luma(0.1), 
-          0.3
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 10 · CRT Scanlines (Glitch Fuerte) ─────────────────────
-  _p10_crtScanlines() {
-    this._s(
-      osc(100, 0.02) // Scanlines horizontales muy cerradas
-        .rotate(1.57)
-        .color(...this._cRot(200, () => 1.2 + audioHigh * 1.0))
-        .modulate(noise(10, 0).scrollX(0.5), () => audioBass * 0.15)
-        .modulateScrollY(osc(2), () => audioMid * 0.2)
-        .add(
-          shape(4, 0.1, 0.0) // Estática poligonal
-            .repeat(20, 2)
-            .color(...this._cRot(0, () => audioBeatMid * 2.0)),
-          0.5
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 11 · Orbital Halo (Arreglado: No Tapa la Pantalla) ─────
-  _p11_orbitalHalo() {
-    this._s(
-      shape(100, 0.4, 0.01) // Base de anillo fija (NO 2.0+ de scale)
-        .color(...this._cRot(110, () => 1.5 + audioMid * 1.0))
-        .scale(() => 1.0 + audioBass * 0.15) // Escala controlada y segura
-        .modulateRotate(osc(20).rotate(() => time * 0.2), () => audioHigh * 0.3)
-        .diff(
-          shape(100, 0.35, 0.01) // Recorte interno para hacer un anillo perfecto
-            .scale(() => 1.0 + audioBass * 0.15)
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 12 · Neon Laser (Líneas Filosas Geométricas) ───────────
-  _p12_neonLaser() {
-    this._s(
-      osc(15, 0.05, () => audioHigh * 2)
-        .thresh(0.7, 0.01) // Láser cortante
-        .rotate(() => time * -0.2)
-        .color(...this._cRot(160, () => 1.5 + audioBeat * 1.0))
-        .kaleid(3) // Geometría triangular/hexagonal
-        .modulate(osc(10).rotate(1.57), () => audioBass * 0.2)
-    ).out(o0);
-  }
-
-  // ── PRESET 13 · Geometry Vortex (Geometría Clara en Rotación) ─────
-  _p13_geometryVortex() {
-    this._s(
-      shape(6, 0.5, 0.01) // Hexágono principal
-        .color(...this._cRot(280, () => 1.2 + audioMid * 1.0))
-        .rotate(() => time * 0.3 + audioBass * 0.5)
-        .repeat(2, 2)
-        .add(
-          src(o0)
-            .scale(() => 0.8 + audioBass * 0.1) // Vortex inward
-            .rotate(0.1),
-          0.6
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 14 · Hyper Warp (Reemplaza el viejo "Time Warp") ───────
-  _p14_hyperWarp() {
-    this._s(
-      shape(4, 0.05, 0) // "Estrellas" rectangulares
-        .repeat(15, 15)
-        .color(...this._cRot(350, () => 1.0 + audioHigh * 2.0))
-        .modulate(noise(2, 0).scrollX(0.5), () => audioBass * 0.3)
-        .blend(
-          src(o0) // Efecto Hyper Warp con feedback zoom-in estricto
-            .scale(() => 1.05 + audioBeat * 0.1) // Salto warp con los golpes
-            .luma(0.2), 
-          0.8
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 15 · Infinite Tunnel (Túnel Recto Geométrico) ──────────
-  _p15_infiniteTunnel() {
-    this._s(
-      osc(10, 0.1, () => audioMid * 1.5)
-        .kaleid(4) // Túnel cuadrado en lugar de redondo
-        .color(...this._cRot(40, () => 1.0 + audioVol * 0.5))
-        .scale(() => 1.0 + audioBass * 0.2)
-        .modulateRotate(noise(2, 0.05), () => audioHigh * 0.2)
-        .add(
-          src(o0).scale(0.85).luma(0.1),
-          0.7 // Zoom interior fuerte
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 16 · Wireframe Sphere (Terreno 3D Estricto) ────────────
-  _p16_wireframeSphere() {
-    this._s(
-      shape(2, 0.01) // Líneas delgadas wireframe
-        .repeat(20, 20)
-        .modulate(osc(10).rotate(1.57), 0.5) // Distorsión base
-        .thresh(0.5, 0.0) // Wireframe cortado
-        .color(...this._cRot(80, () => 1.5 + audioBass * 1.5))
-        .scrollY(() => time * 0.5)
-        .kaleid(2) // Simetría
-        .modulateScale(osc(5).rotate(() => time * 0.1), () => audioMid * 0.4) // Efecto esférico ligero
-    ).out(o0);
+        .blend(noise(3).color(1,1,1), 0.01)
+        .invert(() => audioBeat > 0.8 ? 1 : 0)
+    ).out();
   }
 }
