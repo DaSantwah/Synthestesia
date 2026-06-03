@@ -164,281 +164,270 @@ export class HydraController {
     }
   }
 
+
   // ── Preset Switcher ──────────────────────────────────────────────
   applyPreset(index) {
     this.currentPreset = ((index % this.numPresets) + this.numPresets) % this.numPresets;
 
     const presets = [
-      this._p1_liquidPulse,
-      this._p2_psychedelicTide,
-      this._p3_astralGeometry,
-      this._p4_porcaroCascades,
-      this._p5_etherealBloom,
+      this._p1_coreReactor,
+      this._p2_atFieldFractal,
+      this._p3_dataStream,
+      this._p4_tacticalScope,
+      this._p5_gridGlitch,
       this._p6_evaSyncWaves,
       this._p7_lclEcho,
-      this._p8_neonWake,
-      this._p9_deepCurrent,
-      this._p10_dreamScan,
-      this._p11_velvetShift,
-      this._p12_silkPhase,
-      this._p13_gentleVortex,
-      this._p14_timeWarp,
+      this._p8_radarSweep,
+      this._p9_topoMap,
+      this._p10_crtScanlines,
+      this._p11_orbitalHalo,
+      this._p12_neonLaser,
+      this._p13_geometryVortex,
+      this._p14_hyperWarp,
       this._p15_infiniteTunnel,
-      this._p16_reactiveSphere,
+      this._p16_wireframeSphere,
     ];
 
     presets[this.currentPreset].call(this);
   }
 
-  // ── PRESET 01 · Liquid Pulse ──────────────────────────────────────
-  _p1_liquidPulse() {
+  // ── PRESET 01 · Core Reactor (Geometría Sólida) ───────────────────
+  _p1_coreReactor() {
     this._s(
-      osc(() => audioLowMid * 8 + 4, 0.03, () => audioHigh * 1.5)
-        .modulate(noise(() => audioBass * 2 + 1, 0.03), () => audioMid * 0.5 + 0.2)
-        .colorama(() => audioBrilliance * 0.1 + audioBeat * 0.05)
-        .color(...this._c(() => 0.5 + audioMid * 0.3 + audioBeat * 0.4))
-        .scale(() => 1 + audioBeat * 0.12)
-        .rotate(() => audioVol * 0.3, 0.005)
-    ).out(o0);
-  }
-
-  // ── PRESET 02 · Psychedelic Tide ──────────────────────────────────
-  _p2_psychedelicTide() {
-    this._s(
-      voronoi(8, 0.05)
-        .diff(osc(() => 2 + audioBass * 10, 0.1).rotate(() => time * 0.2 + audioLowMid * 0.5))
-        .kaleid(5)
-        .color(...this._cRot(180, () => 1.0 + audioBeat * 0.8))
-        .modulate(noise(3, 0.1), () => audioBass * 0.5) // Safe modulation
-    ).out(o0);
-  }
-
-  // ── PRESET 03 · Astral Geometry ───────────────────────────────────
-  _p3_astralGeometry() {
-    this._s(
-      shape(4, 0.5, 0.1)
-        .repeat(3, 3)
-        .modulateScrollY(osc(() => 2 + audioBass * 15, 0.1), () => audioMid * 0.5)
-        .kaleid(4)
-        .color(...this._cRot(90, () => 1.0 + audioBeat * 0.5))
+      shape(100, () => 0.2 + audioBass * 0.1, 0.01) // Esfera dura central, escala controlada
+        .color(...this._cRot(0, () => 1.5 + audioMid * 1.5))
+        .modulateScale(osc(10).rotate(1.57), () => audioBass * 0.5)
         .add(
-          src(o0).scale(() => 0.9 - audioBass * 0.2).rotate(() => time * 0.2), 
-          () => 0.6 + audioVol * 0.2
+          shape(4, 0.4, 0.01) // Cuadrado afilado de fondo
+            .rotate(() => time * 0.2)
+            .color(...this._cRot(180, () => audioHigh * 1.5))
+            .repeat(2, 2)
+            .kaleid(2),
+          0.3
         )
-        .scale(() => 1.0 + audioBass * 0.5) // Violent zoom on bass
     ).out(o0);
   }
 
-  // ── PRESET 04 · Porcaro Cascades ──────────────────────────────────
-  _p4_porcaroCascades() {
+  // ── PRESET 02 · AT-Field Fractal (Hexágonos Absolutos) ────────────
+  _p2_atFieldFractal() {
     this._s(
-      osc(() => audioMid * 12 + 8, 0.015, () => audioHigh * 1.5)
-        .modulateScale(noise(() => audioBass * 1.5 + 0.5, 0.02), () => audioLowMid * 0.4 + 0.1)
-        .color(...this._c(() => 0.6 + audioHigh * 0.4))
-        .mult(osc(8, 0.01).rotate(() => audioVol * 0.15))
+      voronoi(5, 0.0) // Voronoi duro, bordes geométricos
+        .thresh(0.5, 0.1) // Blanco/negro muy afilado
+        .kaleid(6) // Simetría hexagonal
+        .color(...this._cRot(45, () => 1.2 + audioBeat * 1.5))
+        .modulate(osc(15).rotate(() => time * 0.1), () => audioLowMid * 0.4)
+        .scale(() => 1.0 + audioBass * 0.2) // Escala moderada
     ).out(o0);
   }
 
-  // ── PRESET 05 · Ethereal Bloom ────────────────────────────────────
-  _p5_etherealBloom() {
+  // ── PRESET 03 · Data Stream (Cascada Matrix Táctica) ──────────────
+  _p3_dataStream() {
     this._s(
-      noise(() => 2 + audioSub * 5, 0.05) // Safe noise
-        .modulate(voronoi(() => 5 + audioMid * 5, 0.05), () => audioBass * 0.5) // Safe modulate
-        .colorama(() => audioBrilliance * 0.2)
-        .color(...this._cRot(45, () => 1.2 + audioLowMid * 0.8))
-        .modulateHue(src(o0), () => audioBass * 0.2) // Safe feedback modulation
+      shape(4, 0.01, 0)
+        .scale(1, 20) // Líneas verticales afiladas
+        .repeat(30, 1)
+        .color(...this._cRot(90, () => 1.0 + audioHigh * 1.0))
+        .scrollY(() => time * 1.5 + audioMid * 2.0) // Lluvia rápida
+        .modulate(noise(3, 0).scrollX(0.5), () => audioBass * 0.3)
+        .add(
+          src(o0).scale(1.01).luma(0.2), // Ligeras estelas
+          0.4
+        )
     ).out(o0);
   }
 
-  // ── PRESET 06 · EVA Sync Waves ────────────────────────────────────
+  // ── PRESET 04 · Tactical Scope (Anillos Concéntricos Rígidos) ─────
+  _p4_tacticalScope() {
+    this._s(
+      shape(100, 0.1, 0.01) // Anillo fino
+        .repeat(4, 4)
+        .modulateScale(osc(8).rotate(1.57), () => audioMid * 0.8)
+        .color(...this._cRot(15, () => 0.8 + audioVol * 1.0))
+        .add(
+          shape(100, () => 0.5 + audioBass * 0.3, 0.001) // Anillo externo perimetral
+            .color(...this._cRot(180, () => 0.5 + audioBeat * 1.0)),
+          0.5
+        )
+    ).out(o0);
+  }
+
+  // ── PRESET 05 · Grid Glitch (Fallos de Matriz) ────────────────────
+  _p5_gridGlitch() {
+    this._s(
+      osc(20, 0, () => audioMid * 2.0)
+        .thresh(0.4, 0) // Bandas afiladas
+        .mult(osc(20, 0).rotate(1.57).thresh(0.4, 0)) // Cruces puras
+        .color(...this._cRot(120, () => 1.2 + audioHigh * 0.8))
+        .scrollX(() => (audioBeatMid > 0.5 ? Math.random() * 0.1 : 0)) // Glitch horizontal en beats
+        .scrollY(() => (audioBeat > 0.5 ? Math.random() * 0.1 : 0))
+    ).out(o0);
+  }
+
+  // ── PRESET 06 · EVA Sync Waves (Afilado) ──────────────────────────
   _p6_evaSyncWaves() {
     this._s(
-      osc(
-        () => audioMid * 35 + 6 + audioBeatMid * 10,
-        () => audioBass * 0.3 + 0.1,
-        () => audioHigh * 3.2
-      )
-      .modulateRotate(
-        osc(() => audioMid * 18).rotate(() => audioBass * 2.2),
-        () => audioBass * 0.8 + audioBeat * 0.4
-      )
-      .color(...this._c(() => 0.4 + (audioBass + audioMid) * 0.3 + audioBeat * 0.4))
-      .mult(noise(() => audioMid * 2.8, 0.02))
-      .kaleid(() => Math.round(audioHigh * 5 + audioBeatMid * 3) + 2)
-      .scale(() => 1 - audioBeat * 0.08)
+      osc(() => 20 + audioMid * 20, 0.05, () => audioHigh * 2)
+        .thresh(0.5, 0.05) // Bordes definidos
+        .modulateRotate(osc(10).rotate(() => audioBass * 1.5), () => audioBass * 0.5)
+        .color(...this._cRot(300, () => 1.0 + audioBeat * 0.8))
+        .kaleid(() => Math.round(audioHigh * 4) + 3) // Formas de 3 a 7 lados
+        .scale(0.8)
     ).out(o0);
   }
 
-  // ── PRESET 07 · LCL Echo ──────────────────────────────────────────
+  // ── PRESET 07 · LCL Echo (Fractal Afilado) ────────────────────────
   _p7_lclEcho() {
     this._s(
       src(o0)
-        .scale(() => 1 - audioBass * 0.01)
-        .rotate(() => audioMid * 0.01, 0.002)
+        .scale(() => 0.95 - audioBass * 0.05) // Feedback estricto, no expande
+        .rotate(() => audioMid * 0.1)
         .blend(
-          shape(4, () => 0.4 + audioHigh * 0.2, 0.08)
-            .modulate(osc(() => audioBass * 6 + 2, 0.02), 0.3)
-            .color(...this._c(() => audioVol * 1.2))
-            .scrollX(() => audioLowMid * 0.02),
-          () => 0.1 + audioHigh * 0.15
+          shape(3, 0.3, 0.01) // Triángulos fuertes
+            .color(...this._cRot(75, () => 1.5 + audioVol * 1.0))
+            .scrollX(() => audioLowMid * 0.1)
+            .scrollY(() => audioHigh * -0.1),
+          () => 0.2 + audioBeat * 0.2
         )
     ).out(o0);
   }
 
-  // ── PRESET 08 · Vaporwave Retro-Grid ──────────────────────────────
-  _p8_neonWake() {
+  // ── PRESET 08 · Radar Sweep (Reemplazo absoluto del 08 antiguo) ───
+  _p8_radarSweep() {
     this._s(
-      shape(4, 0.9, 0.01)
-        .scale(1.5, 0.5) // Safe static scale
-        .repeat(20, 20)
-        .modulate(osc(10).rotate(1.57), 0.5)
-        .scrollY(() => time * 0.5 + audioLowMid * 1.0) 
-        .color(...this._cRot(240, () => 1.0 + audioBass * 2.0))
+      osc(10, 0.1, 0.5) // Línea rotativa principal (Sweep)
+        .thresh(0.8, 0.05)
+        .color(...this._cRot(210, () => 2.0 + audioHigh * 1.0))
+        .rotate(() => time * 1.0 + audioLowMid * 0.5)
+        .mult(
+          shape(100, 0.8, 0.02) // Límite del radar circular
+            .color(1, 1, 1)
+        )
         .add(
-          shape(20, 0.4, 0.2) // Safe static radius
-            .color(...this._cRot(30, () => 1.5 + audioHigh * 2.0))
-            .scrollY(-0.2)
-            .scale(() => 1.0 + audioBass * 0.5), 
+          shape(4, 0.05, 0) // Targets encontrados (Glitches poligonales)
+            .repeat(8, 8)
+            .color(...this._cRot(30, () => audioBeat * 2.5)) // Solo visibles al golpear bajo
+            .modulate(noise(5, 0.1).scrollX(1)),
+          0.6
+        )
+    ).out(o0);
+  }
+
+  // ── PRESET 09 · Topo Map (Mapas de Relieve Holográfico) ───────────
+  _p9_topoMap() {
+    this._s(
+      noise(4, 0.05) // Base topográfica
+        .thresh(() => 0.4 - audioBass * 0.1, 0.02) // Líneas de contorno cortadas
+        .color(...this._cRot(340, () => 1.0 + audioMid * 1.5))
+        .modulate(osc(10).rotate(1.57), () => audioBass * 0.2)
+        .scrollY(() => time * 0.2)
+        .add(
+          src(o0).scale(1.02).luma(0.1), 
+          0.3
+        )
+    ).out(o0);
+  }
+
+  // ── PRESET 10 · CRT Scanlines (Glitch Fuerte) ─────────────────────
+  _p10_crtScanlines() {
+    this._s(
+      osc(100, 0.02) // Scanlines horizontales muy cerradas
+        .rotate(1.57)
+        .color(...this._cRot(200, () => 1.2 + audioHigh * 1.0))
+        .modulate(noise(10, 0).scrollX(0.5), () => audioBass * 0.15)
+        .modulateScrollY(osc(2), () => audioMid * 0.2)
+        .add(
+          shape(4, 0.1, 0.0) // Estática poligonal
+            .repeat(20, 2)
+            .color(...this._cRot(0, () => audioBeatMid * 2.0)),
+          0.5
+        )
+    ).out(o0);
+  }
+
+  // ── PRESET 11 · Orbital Halo (Arreglado: No Tapa la Pantalla) ─────
+  _p11_orbitalHalo() {
+    this._s(
+      shape(100, 0.4, 0.01) // Base de anillo fija (NO 2.0+ de scale)
+        .color(...this._cRot(110, () => 1.5 + audioMid * 1.0))
+        .scale(() => 1.0 + audioBass * 0.15) // Escala controlada y segura
+        .modulateRotate(osc(20).rotate(() => time * 0.2), () => audioHigh * 0.3)
+        .diff(
+          shape(100, 0.35, 0.01) // Recorte interno para hacer un anillo perfecto
+            .scale(() => 1.0 + audioBass * 0.15)
+        )
+    ).out(o0);
+  }
+
+  // ── PRESET 12 · Neon Laser (Líneas Filosas Geométricas) ───────────
+  _p12_neonLaser() {
+    this._s(
+      osc(15, 0.05, () => audioHigh * 2)
+        .thresh(0.7, 0.01) // Láser cortante
+        .rotate(() => time * -0.2)
+        .color(...this._cRot(160, () => 1.5 + audioBeat * 1.0))
+        .kaleid(3) // Geometría triangular/hexagonal
+        .modulate(osc(10).rotate(1.57), () => audioBass * 0.2)
+    ).out(o0);
+  }
+
+  // ── PRESET 13 · Geometry Vortex (Geometría Clara en Rotación) ─────
+  _p13_geometryVortex() {
+    this._s(
+      shape(6, 0.5, 0.01) // Hexágono principal
+        .color(...this._cRot(280, () => 1.2 + audioMid * 1.0))
+        .rotate(() => time * 0.3 + audioBass * 0.5)
+        .repeat(2, 2)
+        .add(
+          src(o0)
+            .scale(() => 0.8 + audioBass * 0.1) // Vortex inward
+            .rotate(0.1),
+          0.6
+        )
+    ).out(o0);
+  }
+
+  // ── PRESET 14 · Hyper Warp (Reemplaza el viejo "Time Warp") ───────
+  _p14_hyperWarp() {
+    this._s(
+      shape(4, 0.05, 0) // "Estrellas" rectangulares
+        .repeat(15, 15)
+        .color(...this._cRot(350, () => 1.0 + audioHigh * 2.0))
+        .modulate(noise(2, 0).scrollX(0.5), () => audioBass * 0.3)
+        .blend(
+          src(o0) // Efecto Hyper Warp con feedback zoom-in estricto
+            .scale(() => 1.05 + audioBeat * 0.1) // Salto warp con los golpes
+            .luma(0.2), 
           0.8
         )
     ).out(o0);
   }
 
-  // ── PRESET 09 · Deep Current ──────────────────────────────────────
-  _p9_deepCurrent() {
-    this._s(
-      src(o0)
-        .scale(() => 1.01 + audioBass * 0.01)
-        .rotate(0.002)
-        .blend(
-          osc(() => audioLowMid * 10 + 5, 0.02, () => audioHigh * 0.5)
-            .modulate(osc(() => audioBass * 10).rotate(Math.PI / 2), () => audioMid * 0.3)
-            .color(...this._c(() => 0.5 + audioBass * 0.5)),
-          () => 0.2 + audioVol * 0.15
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 10 · CRT Glitch Scanlines ──────────────────────────────
-  _p10_dreamScan() {
-    this._s(
-      osc(() => 50 + audioBass * 50, 0.05, () => audioMid * 1.5) // Simple lines
-        .rotate(Math.PI / 2) // Make them horizontal
-        .modulate(noise(() => 3 + audioMid * 5, 0.1), () => audioBass * 0.2)
-        .color(...this._cRot(60, () => 0.8 + audioVol * 0.5))
-        .add(
-          osc(100, 0.1) // Static scanline
-            .rotate(Math.PI / 2)
-            .color(1, 1, 1)
-            .scrollY(() => time * -0.5), 
-          () => audioBeat * 0.8
-        )
-        .scrollX(() => (audioMid - 0.5) * 0.1 * audioBeat) 
-    ).out(o0);
-  }
-
-  // ── PRESET 11 · Orbital Solar Flares ──────────────────────────────
-  _p11_velvetShift() {
-    this._s(
-      shape(100, 0.1, 0.9)
-        .scale(() => 1.0 + audioBass * 1.2)
-        .color(...this._cRot(0, () => 1.5 + audioMid * 1.0))
-        .modulate(osc(() => 5 + audioHigh * 10).rotate(() => time * 0.5), () => audioLowMid * 0.5) // Safe modulation
-        .add(
-          shape(100, 0.02, 1.0)
-            .scale(() => 2.0 + audioSub * 2.5)
-            .color(...this._cRot(30, () => audioHigh * 2.0)),
-          0.5
-        )
-        .rotate(() => time * 0.2 + audioBeatMid * 0.5)
-    ).out(o0);
-  }
-
-  // ── PRESET 12 · Neon Laser Scanner ────────────────────────────────
-  _p12_silkPhase() {
-    this._s(
-      osc(() => 10 + audioMid * 5, 0.1, () => audioHigh * 1.5)
-        .thresh(0.8, 0.1) // Sharp laser lines
-        .color(...this._cRot(180, () => 1.0 + audioBeat * 0.5)) // Complementary bright flashes
-        .rotate(() => time * 0.1 + audioBass * 0.2)
-        .modulate(noise(5, 0.1), () => audioLowMid * 0.1)
-        .kaleid(2)
-        .add(
-          osc(() => 5 + audioHigh * 5, 0.1).thresh(0.9, 0.1)
-            .color(...this._cRot(120, () => 0.8 + audioMid * 0.3)) // Triadic alternate lasers
-            .rotate(() => -time * 0.15),
-          0.5
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 13 · Gentle Vortex ─────────────────────────────────────
-  _p13_gentleVortex() {
-    this._s(
-      osc(() => audioHigh * 15 + 5, 0.02, () => audioBass * 0.5)
-        .rotate(() => audioVol * 0.2)
-        .modulateRotate(osc(() => audioMid * 10).rotate(() => audioBass * 0.5), () => audioBass * 0.2)
-        .color(...this._c(() => 0.5 + audioMid * 0.5))
-        .add(
-          osc(() => audioBass * 10, 0.02).color(...this._c(() => audioHigh * 0.5)), 
-          () => audioVol * 0.3
-        )
-    ).out(o0);
-  }
-
-  // ── PRESET 14 · Time Warp ─────────────────────────────────────────
-  _p14_timeWarp() {
-    this._s(
-      noise(() => audioSub * 1.5 + 1, 0.02)
-        .modulateScale(src(o0).scale(() => 1 + audioBass * 0.01), () => 1 + audioVol * 0.2)
-        .blend(
-          osc(() => audioHigh * 15 + 5, 0.02)
-            .color(...this._c(() => 0.4 + audioMid * 0.6))
-            .kaleid(4),
-          () => audioVol * 0.2
-        )
-        .rotate(() => audioBass * 0.2, 0.002)
-    ).out(o0);
-  }
-
-  // ── PRESET 15 · Infinite Tunnel (Vórtice Infinito) ───────────────
+  // ── PRESET 15 · Infinite Tunnel (Túnel Recto Geométrico) ──────────
   _p15_infiniteTunnel() {
     this._s(
-      src(o0)
-        .scale(() => 0.95 - audioBeat * 0.04) // Efecto de empuje (zoom) en cada golpe de bajo
-        .rotate(() => 0.012 + audioLowMid * 0.02) // Acelera el vórtice con la música
-        .blend(
-          osc(() => 20 + audioMid * 8, 0.06, 0.9) // Añade estrías a las paredes del túnel
-            .kaleid(5)
-            .color(...this._cRot(0, () => 0.6 + audioHigh * 0.6)) // Destellos de luz en agudos
-            .rotate(() => time * 0.08 + audioBass * 0.1) // Giros bruscos reactivos
-            .modulate(osc(10).rotate(1.57), () => 0.05 + audioVol * 0.1) // Distorsión reactiva
-            .add(
-              noise(() => 180 + audioBass * 50, 0.01).luma(0.4, 0.1), 
-              () => 0.1 + audioBass * 0.5 // Gránulos más intensos
-            ),
-          () => 0.15 + audioHigh * 0.15 // Intensifica la mezcla en los agudos
+      osc(10, 0.1, () => audioMid * 1.5)
+        .kaleid(4) // Túnel cuadrado en lugar de redondo
+        .color(...this._cRot(40, () => 1.0 + audioVol * 0.5))
+        .scale(() => 1.0 + audioBass * 0.2)
+        .modulateRotate(noise(2, 0.05), () => audioHigh * 0.2)
+        .add(
+          src(o0).scale(0.85).luma(0.1),
+          0.7 // Zoom interior fuerte
         )
     ).out(o0);
   }
 
-  // ── PRESET 16 · 3D Audio Terrain ──────────────────────────────────
-  _p16_reactiveSphere() {
+  // ── PRESET 16 · Wireframe Sphere (Terreno 3D Estricto) ────────────
+  _p16_wireframeSphere() {
     this._s(
-      shape(2, 0.01)
-        .repeat(20, 100)
-        .modulate(osc(10).rotate(Math.PI / 2), 0.5)
-        .modulate(osc(() => 10 + audioBass * 30), () => audioMid * 0.5) 
-        .scrollY(() => time * 0.5) // Constant scroll instead of modulateScrollY
-        .color(...this._cRot(180, () => 1.5 + audioHigh * 2.0))
-        .add(
-          noise(() => 3 + audioMid * 10, 0.1)
-            .color(...this._cRot(0, () => audioBass * 2.0)),
-          0.3
-        )
-        .kaleid(2)
-        .scale(() => 1.2 + audioLowMid * 0.5)
-        .rotate(() => time * 0.1)
+      shape(2, 0.01) // Líneas delgadas wireframe
+        .repeat(20, 20)
+        .modulate(osc(10).rotate(1.57), 0.5) // Distorsión base
+        .thresh(0.5, 0.0) // Wireframe cortado
+        .color(...this._cRot(80, () => 1.5 + audioBass * 1.5))
+        .scrollY(() => time * 0.5)
+        .kaleid(2) // Simetría
+        .modulateScale(osc(5).rotate(() => time * 0.1), () => audioMid * 0.4) // Efecto esférico ligero
     ).out(o0);
   }
 }

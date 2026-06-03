@@ -74,9 +74,7 @@ const $trackName       = document.getElementById('track-name');
 const $trackTime       = document.getElementById('track-time');
 
 const $btnRecord       = document.getElementById('btn-record');
-const $btnDownload     = document.getElementById('btn-download');
 const $btnSnapshot     = document.getElementById('btn-snapshot');
-
 const $micIndicator    = document.getElementById('mic-indicator');
 const $btnPlay         = document.getElementById('btn-play');
 const $btnStop         = document.getElementById('btn-stop');
@@ -714,8 +712,6 @@ $btnRecord.addEventListener('click', async () => {
 });
 
 async function startRecording() {
-  $btnDownload.classList.add('hidden');
-  $btnDownload.href = '';
   $colorPanel.classList.add('hidden');
 
   if (!analyzer.isMic) {
@@ -779,10 +775,10 @@ $btnReset.addEventListener('click', () => {
 
   $uploadScreen.classList.remove('hidden');
   $controlBar.classList.add('hidden');
+  $videoPreviewModal.classList.add('hidden');
   $colorPanel.classList.add('hidden');
   $customPanel.classList.add('hidden');
   $specCanvas.classList.remove('visible');
-  $btnDownload.classList.add('hidden');
   $recIndicator.classList.add('hidden');
   $midiIndicator.classList.add('hidden');
   $micIndicator.classList.add('hidden');
