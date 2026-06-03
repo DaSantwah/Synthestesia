@@ -56,106 +56,95 @@ export class VisualEngine {
   applyPreset(index) {
     this.currentPreset = ((index % this.numPresets) + this.numPresets) % this.numPresets;
     const presets = [
-      this._p0_liquidFeedback,
-      this._p1_hyperSpace,
-      this._p2_glassEcho,
-      this._p3_chromaticFluid,
-      this._p4_neonAbyss,
-      this._p5_strobeFractal,
-      this._p6_cyberMelt,
-      this._p7_systemCollapse
+      this._p0_liquidSmoke,
+      this._p1_neonInk,
+      this._p2_aurora,
+      this._p3_waterRipples,
+      this._p4_ferrofluid,
+      this._p5_lavaLamp,
+      this._p6_biolum,
+      this._p7_vapor
     ];
     // Reset buffers before switching
     solid(0,0,0,1).out(o0);
     solid(0,0,0,1).out(o1);
     
-    setTimeout(() => {
-      presets[this.currentPreset].bind(this)();
-    }, 50);
+  // 0. Liquid Smoke: Deep, slow-moving smoke that reacts to the bass by displacing.
+  _p0_liquidSmoke() {
+    noise(2, 0.05)
+      .modulateScale(osc(2).rotate(() => time * 0.1), 0.1)
+      .modulate(src(o0).scrollY(() => -0.005 - window.audioBass * 0.01), 0.05)
+      .blend(src(o0).scale(() => 1.002 + window.audioBeat * 0.01), 0.9)
+      .mult(solid(...this._c(() => 1.0 + window.audioMid * 0.5)))
+      .out(o0);
   }
 
-  // 0. Liquid Feedback: Infinite melting mirror that reacts to bass transients.
-  _p0_liquidFeedback() {
-    osc(5, 0.1, () => window.audioMid * 0.5)
-      .modulate(noise(2, 0.01).modulate(src(o0), 0.1), () => window.audioBass * 0.5)
-      .blend(src(o0).scale(() => 1.001 + window.audioBeat * 0.02).scrollY(0.002), 0.85)
-      .saturate(1.05)
+  // 1. Neon Ink Drop: Ink spreading in water.
+  _p1_neonInk() {
+    shape(4, 0.01).scrollX(() => Math.sin(time)*0.1).scrollY(() => Math.cos(time)*0.1)
       .color(...this._c())
-      .colorama(() => window.audioHigh * 0.02)
+      .modulate(noise(3, 0.1), () => window.audioBass * 0.5)
+      .blend(src(o0).scale(1.01).rotate(() => window.audioMid * 0.01), 0.95)
       .out(o0);
   }
 
-  // 1. Hyper Space: Deep 3D-like zoom with chromatic aberration on beats.
-  _p1_hyperSpace() {
-    shape(4, 0.2)
-      .kaleid(4)
-      .modulateScale(osc(4).rotate(time * 0.1), () => window.audioMid * 0.5)
-      .diff(src(o0).scale(() => 0.95 - window.audioBeat * 0.1).rotate(0.01))
-      .color(...this._c(() => 1.0 + window.audioBeat))
+  // 2. Aurora Borealis: Wavy, colorful curtains of light.
+  _p2_aurora() {
+    osc(5, 0.05, () => window.audioMid * 0.5)
+      .color(...this._c())
+      .modulate(noise(2, 0.02).scrollY(-0.02), 0.2)
+      .blend(src(o0).scale(1.0).scrollY(0.005), 0.9)
+      .saturate(1.2)
       .out(o0);
   }
 
-  // 2. Glass Echo: Smooth, elegant glassmorphic echoes.
-  _p2_glassEcho() {
-    voronoi(8, 1)
+  // 3. Deep Water Surface: Rippling reflections.
+  _p3_waterRipples() {
+    noise(4, 0.1)
+      .luma(0.5, 0.1)
+      .color(...this._c())
+      .modulate(src(o0), () => window.audioBass * 0.1)
+      .blend(src(o0).scale(1.02), 0.85)
+      .modulateScrollY(osc(2), () => window.audioBeat * 0.05)
+      .out(o0);
+  }
+
+  // 4. Magnetic Ferrofluid: Dark, metallic fluid.
+  _p4_ferrofluid() {
+    voronoi(5, 0.5)
       .luma(0.2)
-      .modulatePixelate(noise(5), () => 100 + window.audioBass * 100)
-      .layer(src(o0).mask(shape(4, 0.5, 0.1)).scale(1.05).luma(0.1))
-      .blend(src(o0).scale(1.01), 0.8)
-      .color(...this._c())
-      .out(o0);
-  }
-
-  // 3. Chromatic Fluid: Intense color separation and fluid smearing.
-  _p3_chromaticFluid() {
-    noise(3, 0.1)
-      .color(1, 0, 0).shift(0.01, 0)
-      .layer(noise(3, 0.1).color(0, 1, 0).mask(shape(99, 0.5, 0.1)))
-      .layer(noise(3, 0.1).color(0, 0, 1).shift(-0.01, 0))
-      .modulate(src(o0), () => window.audioBass * 0.3)
-      .blend(src(o0).scale(1.02), 0.9)
+      .modulate(noise(2, 0.1), () => window.audioHigh * 0.2)
+      .blend(src(o0).scale(() => 0.99 - window.audioBass * 0.02), 0.9)
       .mult(solid(...this._c()))
       .out(o0);
   }
 
-  // 4. Neon Abyss: Deep space void with neon edges.
-  _p4_neonAbyss() {
-    shape(99, 0.3)
-      .edge(() => window.audioHigh * 2)
+  // 5. Lava Lamp: Slow, glowing blobs.
+  _p5_lavaLamp() {
+    noise(2, 0.02)
+      .thresh(0.4, 0.2)
       .color(...this._c())
-      .modulate(noise(3, 0.1), () => window.audioBass * 0.5)
-      .add(src(o0).scrollY(-0.01).scale(0.99), 0.6)
+      .modulate(src(o0), () => 0.01 + window.audioBass * 0.05)
+      .blend(src(o0).scrollY(-0.002), 0.95)
       .out(o0);
   }
 
-  // 5. Strobe Fractal: Rapid geometric expansion.
-  _p5_strobeFractal() {
-    osc(20, 0.1, () => window.audioMid * 0.5)
-      .modulateRotate(osc(10), () => window.audioMid * 0.5)
-      .kaleid(() => 2 + Math.floor(window.audioBeat * 4))
-      .diff(src(o0).scale(0.9))
-      .add(solid(...this._c(() => window.audioBeat)), 0.5)
+  // 6. Bioluminescent Algae: Glowing swirls in the dark.
+  _p6_biolum() {
+    noise(10, 0.2)
+      .luma(0.8, 0.1)
+      .color(...this._c())
+      .modulateRotate(osc(2), () => window.audioMid * 0.2)
+      .blend(src(o0).scale(1.01).rotate(0.01), 0.92)
       .out(o0);
   }
 
-  // 6. Cyber Melt: Heavy vertical distortion like a melting VHS.
-  _p6_cyberMelt() {
-    osc(10, 0.1, () => window.audioMid * 0.2)
-      .modulateScrollX(osc(40, 0).rotate(Math.PI/2), () => window.audioBass * 0.5)
-      .blend(src(o0).scrollY(() => -0.01 - window.audioBeat * 0.05), 0.8)
-      .saturate(() => 1.0 + window.audioBeat)
+  // 7. Ethereal Vapor: Very soft mists.
+  _p7_vapor() {
+    osc(3, 0.01, 0)
+      .modulate(noise(1, 0.01), 0.1)
       .color(...this._c())
-      .out(o0);
-  }
-
-  // 7. System Collapse: Pure chaos, mixing voronoi, feedback, and scale.
-  _p7_systemCollapse() {
-    voronoi(10, 2)
-      .modulate(voronoi(10), () => window.audioVol * 2.0)
-      .colorama(() => window.audioBeat * 0.5)
-      .kaleid(() => 2 + Math.floor(window.audioBass * 3))
-      .blend(src(o0).scale(1.1).rotate(0.05), 0.5)
-      .color(...this._c())
+      .blend(src(o0).scale(1.005).scrollY(() => -0.001 - window.audioBass * 0.01), 0.98)
       .out(o0);
   }
 }
