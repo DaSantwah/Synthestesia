@@ -64,8 +64,11 @@
     </div>
     
     <!-- Reproductor de Audio Local -->
-    <div id="playback-container" style="display: none; padding: 0 32px 24px; display: none;">
+    <div id="playback-container" style="display: none; padding: 0 32px 24px;">
       <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+        <button id="btn-play-pause" class="icon-btn" style="width: 32px; height: 32px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </button>
         <span id="time-current" style="font-family: var(--mono); font-size: 10px; color: var(--muted);">0:00</span>
         <input type="range" id="timeline-slider" min="0" max="100" value="0" style="flex: 1;" />
         <span id="time-total" style="font-family: var(--mono); font-size: 10px; color: var(--muted);">0:00</span>
@@ -89,6 +92,6 @@
   </div>
 
   <script src="https://unpkg.com/hydra-synth"></script>
-  <script type="module" src="./app.js?v=7"></script>
+  <script type="module" src="./app.js?v=8"></script>
 </body>
 </html>

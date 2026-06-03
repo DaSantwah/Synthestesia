@@ -101,6 +101,23 @@ export class AudioEngine {
     }
   }
 
+  togglePlay() {
+    if (this.fileAudio) {
+      if (this.fileAudio.paused) {
+        this.fileAudio.play();
+        return true; // is playing
+      } else {
+        this.fileAudio.pause();
+        return false; // is paused
+      }
+    }
+    return false;
+  }
+
+  isPlaying() {
+    return this.fileAudio && !this.fileAudio.paused;
+  }
+
   update(sensMultiplier = 1.0) {
     if (!this.isActive || !this.analyzer) return;
     this.analyzer.getByteFrequencyData(this.dataArray);

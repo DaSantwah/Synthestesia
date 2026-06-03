@@ -29,10 +29,10 @@ export class VisualEngine {
     ];
   }
 
-  // Returns the source. If screen is active, returns s0 (the capture). Else returns noise as a fallback canvas.
+  // Returns the source. If screen is active, returns s0 (the capture). Else returns a noise texture.
   _canvas() {
     if (this.screenActive) return src(s0);
-    return solid(0,0,0);
+    return noise(2, 0.1);
   }
 
   async toggleScreenCapture() {

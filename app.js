@@ -35,11 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const $warningScreen = document.getElementById('warning-screen');
   const $btnAccept = document.getElementById('btn-accept');
 
-  // Playback UI
   const $playbackContainer = document.getElementById('playback-container');
+  const $btnPlayPause = document.getElementById('btn-play-pause');
   const $timeCurrent = document.getElementById('time-current');
   const $timeTotal = document.getElementById('time-total');
   const $timelineSlider = document.getElementById('timeline-slider');
+
+  // SVG Icons
+  const iconPlay = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+  const iconPause = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
 
   function formatTime(secs) {
     if (isNaN(secs)) return "0:00";
@@ -54,6 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
     $timelineSlider.addEventListener('mouseup', () => isDraggingTimeline = false);
     $timelineSlider.addEventListener('input', (e) => {
       audio.seek(parseFloat(e.target.value));
+    });
+  }
+
+  if ($btnPlayPause) {
+    $btnPlayPause.addEventListener('click', () => {
+      const playing = audio.togglePlay();
+      $btnPlayPause.innerHTML = playing ? iconPause : iconPlay;
     });
   }
 
@@ -107,7 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
         $btnUpload.style.color = 'var(--accent)';
         $btnMic.classList.remove('active');
         $btnMic.style.color = '';
-        if ($playbackContainer) $playbackContainer.style.display = 'block';
+        if ($playbackContainer) {
+          $playbackContainer.style.display = 'block';
+          $btnPlayPause.innerHTML = iconPause; // auto-plays on load
+        }
       }
     }
   });
