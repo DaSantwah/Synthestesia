@@ -201,14 +201,15 @@ export class HydraController {
     }
   }
 
-  // 1. Glitch Core
+  // 1. Glitch Core - Base shape, mild modulation
   _p1_glitchCore() {
     this._s(
-      shape(4, 0.5) // A solid base shape that never grows to infinity
+      shape(4, 0.4)
         .color(...this._c())
-        .modulate(noise(4), () => audioBass * 0.8) // Distorts instead of scaling
-        .rotate(() => time * 0.2 + audioMid * 0.5)
+        .modulate(noise(4), () => audioBass * 0.1) // Max 0.3 displacement
+        .rotate(() => time * 0.2 + audioMid * 0.2)
         .kaleid(4)
+        .scale(() => 1.0 + audioBeat * 0.1) // tiny bounce for flavor
         .diff(src(o0).rotate(0.1).scale(0.95))
     ).out(o0);
   }
@@ -219,20 +220,24 @@ export class HydraController {
       voronoi(8, 2)
         .thresh(0.5)
         .color(...this._cRot(90))
-        .modulateRotate(osc(10), () => audioHigh * 1.5)
-        .add(shape(99, 0.1).color(...this._c()).modulateScale(noise(2), () => audioBass * 0.5))
+        .modulateRotate(osc(10), () => audioHigh * 0.3) // Max ~1 radian rotation
+        .add(
+           shape(99, 0.1)
+             .color(...this._c())
+             .scale(() => 1.0 + audioBass * 0.2) // Max 1.6 scale
+        )
     ).out(o0);
   }
 
   // 3. Laser Grid
   _p3_laserGrid() {
     this._s(
-      osc(40, 0.1, () => audioMid * 0.5)
+      osc(40, 0.1, () => audioMid * 0.2)
         .rotate(Math.PI/2)
         .thresh(0.8)
         .color(...this._c())
-        .modulateScrollX(noise(3), () => audioBass * 0.5)
-        .add(src(o0).scrollY(() => audioHigh * 0.1).luma(0.1))
+        .modulateScrollX(noise(3), () => audioBass * 0.1) // max 0.3 scroll displacement
+        .add(src(o0).scrollY(() => audioHigh * 0.05).luma(0.1))
     ).out(o0);
   }
 
@@ -242,9 +247,9 @@ export class HydraController {
       shape(3, 0.2)
         .repeat(5, 5)
         .color(...this._cRot(45))
-        .modulate(voronoi(2), () => audioBass * 0.4)
-        .scrollX(() => time + audioMid * 0.5)
-        .scrollY(() => audioHigh * 0.5)
+        .modulate(voronoi(2), () => audioBass * 0.1) // Safe modulation
+        .scrollX(() => time * 0.5 + audioMid * 0.1)
+        .scrollY(() => audioHigh * 0.1)
     ).out(o0);
   }
 
@@ -255,8 +260,9 @@ export class HydraController {
         .rotate(Math.PI/4)
         .thresh(0.5)
         .color(...this._c())
-        .modulate(noise(5), () => audioBass * 0.6)
-        .kaleid(() => 2 + Math.floor(audioBeat * 2))
+        .modulate(noise(5), () => audioBass * 0.1)
+        .kaleid(2)
+        .scale(() => 1.0 + audioBeat * 0.1)
     ).out(o0);
   }
 
@@ -264,9 +270,9 @@ export class HydraController {
   _p6_acidBurn() {
     this._s(
       noise(4, 0.1)
-        .colorama(() => audioBass * 0.2)
+        .colorama(() => audioBass * 0.05)
         .color(...this._cRot(180))
-        .modulateRotate(osc(5), () => audioMid * 1.5)
+        .modulateRotate(osc(5), () => audioMid * 0.3)
         .diff(src(o0).scale(0.99))
     ).out(o0);
   }
@@ -276,10 +282,10 @@ export class HydraController {
     this._s(
       shape(2, 0.8)
         .scale(1, 0.05)
-        .scrollY(() => time * 1.5 + audioBass * 0.5)
+        .scrollY(() => time * 1.5 + audioBass * 0.2)
         .color(...this._c())
         .modulatePixelate(noise(5), 50)
-        .add(voronoi(15, 0).thresh(0.8).color(...this._cRot(90)).luma(), () => audioHigh * 0.5)
+        .add(voronoi(15, 0).thresh(0.8).color(...this._cRot(90)).luma(), () => Math.min(audioHigh * 0.5, 1.0))
     ).out(o0);
   }
 
@@ -288,9 +294,9 @@ export class HydraController {
     this._s(
       shape(6, 0.4)
         .color(...this._c())
-        .modulate(osc(10).rotate(1.57), () => audioBass * 0.5)
-        .colorama(() => audioMid * 0.1)
-        .add(src(o0).scale(0.9).rotate(() => audioHigh * 0.2).luma(0.2))
+        .modulate(osc(10).rotate(1.57), () => audioBass * 0.15)
+        .colorama(() => audioMid * 0.05)
+        .add(src(o0).scale(0.9).rotate(() => audioHigh * 0.1).luma(0.2))
     ).out(o0);
   }
 
@@ -299,21 +305,21 @@ export class HydraController {
     this._s(
       shape(99, 0.3)
         .color(...this._cRot(60))
-        .modulate(voronoi(5), () => audioBass * 0.5)
+        .modulate(voronoi(5), () => audioBass * 0.1)
         .kaleid(5)
-        .rotate(() => time * 0.5 + audioMid * 0.5)
+        .rotate(() => time * 0.5 + audioMid * 0.2)
     ).out(o0);
   }
 
   // 10. Data Breach
   _p10_dataBreach() {
     this._s(
-      osc(30, 0.1, () => audioMid * 0.5)
+      osc(30, 0.1, () => audioMid * 0.2)
         .thresh(0.5)
         .color(...this._c())
-        .modulatePixelate(noise(10), 100) // Fixed pixelation size, no negative values!
-        .scrollX(() => audioBass * 0.5)
-        .scrollY(() => audioHigh * 0.5)
+        .modulatePixelate(noise(10), 100)
+        .scrollX(() => audioBass * 0.1)
+        .scrollY(() => audioHigh * 0.1)
     ).out(o0);
   }
 
@@ -323,7 +329,7 @@ export class HydraController {
       voronoi(15, 0)
         .thresh(0.8)
         .color(...this._cRot(120))
-        .modulateRotate(noise(2), () => audioBass * 1.5)
+        .modulateRotate(noise(2), () => audioBass * 0.2)
         .diff(src(o0).scale(0.95))
     ).out(o0);
   }
@@ -334,8 +340,8 @@ export class HydraController {
       noise(6, 0.2)
         .thresh(0.5)
         .color(...this._c())
-        .modulate(osc(10), () => audioBass * 0.5)
-        .colorama(() => audioMid * 0.1)
+        .modulate(osc(10), () => audioBass * 0.1)
+        .colorama(() => audioMid * 0.05)
     ).out(o0);
   }
 
@@ -345,8 +351,8 @@ export class HydraController {
       shape(3, 0.4)
         .repeat(3, 3)
         .color(...this._cRot(200))
-        .modulate(noise(3), () => audioBass * 0.6)
-        .add(src(o0).scrollY(0.01).rotate(() => audioHigh * 0.1).luma(0.1))
+        .modulate(noise(3), () => audioBass * 0.1)
+        .add(src(o0).scrollY(0.01).rotate(() => audioHigh * 0.05).luma(0.1))
     ).out(o0);
   }
 
@@ -357,8 +363,8 @@ export class HydraController {
         .rotate(Math.PI/4)
         .thresh(0.5)
         .color(...this._c())
-        .modulateScrollX(osc(5), () => audioBass * 0.5)
-        .invert(() => audioBeat) // The only place where we use a flash
+        .modulateScrollX(osc(5), () => audioBass * 0.1)
+        .invert(() => audioBeat)
     ).out(o0);
   }
 
@@ -367,9 +373,10 @@ export class HydraController {
     this._s(
       shape(4, 0.5)
         .color(...this._cRot(40))
-        .modulate(osc(10).rotate(1.57), () => audioBass * 0.8)
+        .modulate(osc(10).rotate(1.57), () => audioBass * 0.1)
         .kaleid(3)
         .rotate(() => time * -0.2)
+        .scale(() => 1.0 + audioBeat * 0.15)
     ).out(o0);
   }
 
@@ -378,9 +385,9 @@ export class HydraController {
     this._s(
       shape(100, 0.1)
         .color(...this._c())
-        .modulateScale(noise(5), () => audioBass * 0.5)
+        .modulateScale(noise(5), () => audioBass * 0.1)
         .repeat(4, 4)
-        .modulate(osc(5).rotate(1.57), () => audioMid * 0.5)
+        .modulate(osc(5).rotate(1.57), () => audioMid * 0.1)
         .add(src(o0).scale(0.95).luma(0.2))
     ).out(o0);
   }
