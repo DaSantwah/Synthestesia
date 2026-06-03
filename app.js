@@ -246,17 +246,18 @@ function loop() {
 
   const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
 
-  // Core bands scaled exponentially by sensitivity (no limits)
-  window.audioBass = analyzer.bass * sens * sens * 1.5;
-  window.audioMid  = analyzer.mid * sens * sens * 1.5;
-  window.audioHigh = analyzer.high * sens * sens * 1.5;
-  window.audioVol  = analyzer.overall * sens * sens * 1.5;
+  // Core bands (linear and slightly boosted, avoiding extreme blowouts)
+  const power = sens * 1.5;
+  window.audioBass = analyzer.bass * power;
+  window.audioMid  = analyzer.mid * power;
+  window.audioHigh = analyzer.high * power;
+  window.audioVol  = analyzer.overall * power;
 
   // Extended bands
-  window.audioSub        = analyzer.sub * sens * sens * 1.5;
-  window.audioLowMid     = analyzer.lowMid * sens * sens * 1.5;
-  window.audioPresence   = analyzer.presence * sens * sens * 1.5;
-  window.audioBrilliance = analyzer.brilliance * sens * sens * 1.5;
+  window.audioSub        = analyzer.sub * power;
+  window.audioLowMid     = analyzer.lowMid * power;
+  window.audioPresence   = analyzer.presence * power;
+  window.audioBrilliance = analyzer.brilliance * power;
 
   // Beat transient triggers (not directly scaled to preserve 0.0 - 1.0 normalization)
   window.audioBeat       = analyzer.bassBeat;
