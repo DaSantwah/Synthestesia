@@ -135,7 +135,27 @@ export class HydraController {
       width:               canvas.width,
       height:              canvas.height,
     });
-    this.applyPreset(0);
+    this.playIdleVisuals();
+  }
+
+  // Visuales de reposo / HUD inactivo (Mecha/EVA-01) sin audio.
+  playIdleVisuals() {
+    solid(0.015, 0.004, 0.03) // Dark purple background
+      .layer(
+        shape(4, 0.01, 0)
+          .scale(1, 100)
+          .repeat(20, 20)
+          .color(0.32, 1.0, 0.0) // Neon green grid
+          .modulate(noise(2, 0.1).scrollX(0.5, 0.1))
+          .mult(osc(10, 0.05, 0.5).color(0.48, 0.01, 0.92)) // Purple scanning lines
+      )
+      .layer(
+        osc(20, -0.05, 0.8)
+          .color(1.0, 0.34, 0.13) // Orange warning stripes
+          .mask(shape(4, 0.8, 0.001).scrollX(0.2, 0.1))
+          .luma(0.1)
+      )
+      .out();
   }
 
   setResolution(w, h) {

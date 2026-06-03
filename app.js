@@ -72,12 +72,15 @@ if ($sensSlider && $sensValue) {
 const $btnMicStart     = document.getElementById('btn-mic-start');
 const $trackName       = document.getElementById('track-name');
 const $trackTime       = document.getElementById('track-time');
+
+const $btnRecord       = document.getElementById('btn-record');
+const $btnDownload     = document.getElementById('btn-download');
+const $btnSnapshot     = document.getElementById('btn-snapshot');
+
 const $micIndicator    = document.getElementById('mic-indicator');
 const $btnPlay         = document.getElementById('btn-play');
 const $btnStop         = document.getElementById('btn-stop');
-const $btnRecord       = document.getElementById('btn-record');
 const $recLabel        = document.getElementById('rec-label');
-const $btnDownload     = document.getElementById('btn-download');
 const $videoPreviewModal = document.getElementById('video-preview-modal');
 const $previewVideo      = document.getElementById('preview-video');
 const $btnDownloadModal  = document.getElementById('btn-download-modal');
