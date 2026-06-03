@@ -1,871 +1,129 @@
 /**
- * Synthestesia — Main App
- *
- * New features vs v1:
- *  - Photosensitivity warning gate (must accept before app loads)
- *  - Microphone live input
- *  - Seek bar (scrub through audio)
- *  - PNG snapshot export
- *  - Web MIDI API integration (CC1 → colorH, CC2 → colorS, CC7 → colorL)
- *  - Hydra live-code editor panel
- *  - Extended audio globals: audioSub / audioLowMid / audioPresence / audioBrilliance
- *
- * Audio globals (window.*):
- *   audioBass / audioMid / audioHigh / audioVol
- *   audioSub / audioLowMid / audioPresence / audioBrilliance
- *
- * Color globals (window.*):
- *   colorH / colorS / colorL
+ * Synthestesia V3.0 Orchestrator (app.js)
+ * Clean, robust, and asynchronous module loader.
  */
+import { AudioEngine }  from './audio-engine.js';
+import { VisualEngine } from './visual-engine.js';
 
-// Variables globales de audio requeridas por Hydra
-window.audioBass = 0; window.audioMid = 0; window.audioHigh = 0; window.audioVol = 0;
-window.audioSub = 0; window.audioLowMid = 0; window.audioPresence = 0; window.audioBrilliance = 0;
-window.audioBeat = 0; window.audioBeatMid = 0;
+// Global context for Hydra
+window.audioBass = 0;
+window.audioMid = 0;
+window.audioHigh = 0;
+window.audioVol = 0;
+window.audioBeat = 0;
 
-import { AudioAnalyzer }  from './audio-analyzer.js?v=4';
-import { HydraController } from './hydra-controller.js?v=4';
-import { VideoRecorder }   from './recorder.js?v=4';
-
-// ── Audio globals ───────────────────────────────────────────────────
-window.audioBass       = 0;
-window.audioMid        = 0;
-window.audioHigh       = 0;
-window.audioVol        = 0;
-window.audioSub        = 0;
-window.audioLowMid     = 0;
-window.audioPresence   = 0;
-window.audioBrilliance = 0;
-
-// ── Color globals ───────────────────────────────────────────────────
-window.colorH = 270;
-window.colorS = 85;
+// Color State
+window.colorH = 150; // Neon Green base
+window.colorS = 100;
 window.colorL = 50;
 
-// ── Module instances ────────────────────────────────────────────────
-let analyzer;
-let hydraCtrl;
-let recorder;
+document.addEventListener('DOMContentLoaded', () => {
+  const audio = new AudioEngine();
+  const visual = new VisualEngine();
 
-// ── DOM refs ────────────────────────────────────────────────────────
-const $warningScreen   = document.getElementById('warning-screen');
-const $app             = document.getElementById('app');
-const $btnWarningAccept= document.getElementById('btn-warning-accept');
+  // Elements
+  const $canvas = document.getElementById('hydra-canvas');
+  const $btnMic = document.getElementById('btn-mic');
+  const $btnScreen = document.getElementById('btn-screen');
+  const $btnFullscreen = document.getElementById('btn-fullscreen');
+  const $sensSlider = document.getElementById('sens-slider');
+  const $hueSlider = document.getElementById('hue-slider');
+  const $presetsContainer = document.getElementById('preset-buttons');
+  const $warningScreen = document.getElementById('warning-screen');
+  const $btnAccept = document.getElementById('btn-accept');
 
-const $hydraCanvas     = document.getElementById('hydra-canvas');
-const $uploadScreen    = document.getElementById('upload-screen');
-const $controlBar      = document.getElementById('control-bar');
-const $colorPanel      = document.getElementById('color-panel');
-const $customPanel     = document.getElementById('custom-preset-panel');
-const $dropZone        = document.getElementById('drop-zone');
-const $fileInput       = document.getElementById('file-input');
-const $sensSlider      = document.getElementById('sens-slider');
-const $sensValue       = document.getElementById('sens-value'); // Added reference
-
-// Sensibilidad visual listener
-if ($sensSlider && $sensValue) {
-  $sensSlider.addEventListener('input', (e) => {
-    $sensValue.textContent = `${parseFloat(e.target.value).toFixed(2)}x`;
-  });
-}
-const $btnMicStart     = document.getElementById('btn-mic-start');
-const $trackName       = document.getElementById('track-name');
-const $trackTime       = document.getElementById('track-time');
-
-const $btnRecord       = document.getElementById('btn-record');
-const $btnSnapshot     = document.getElementById('btn-snapshot');
-const $micIndicator    = document.getElementById('mic-indicator');
-const $btnPlay         = document.getElementById('btn-play');
-const $btnStop         = document.getElementById('btn-stop');
-const $recLabel        = document.getElementById('rec-label');
-const $videoPreviewModal = document.getElementById('video-preview-modal');
-const $previewVideo      = document.getElementById('preview-video');
-const $btnDownloadModal  = document.getElementById('btn-download-modal');
-const $btnCloseModal     = document.getElementById('btn-close-modal');
-const $btnReset        = document.getElementById('btn-reset');
-const $btnToggleColor  = document.getElementById('btn-toggle-color');
-const $btnMidi         = document.getElementById('btn-midi');
-const $btnCustomPreset = document.getElementById('btn-custom-preset');
-const $btnScreen       = document.getElementById('btn-screen');
-const $btnCpClose      = document.getElementById('btn-cp-close');
-const $btnCpRun        = document.getElementById('btn-cp-run');
-const $cpCode          = document.getElementById('custom-preset-code');
-const $cpError         = document.getElementById('cp-error');
-const $recIndicator    = document.getElementById('rec-indicator');
-const $midiIndicator   = document.getElementById('midi-indicator');
-const $presetBtns      = document.querySelectorAll('.preset-btn');
-const $colorPreview    = document.getElementById('color-preview');
-const $sliderHue       = document.getElementById('slider-hue');
-const $sliderSat       = document.getElementById('slider-sat');
-const $sliderLum       = document.getElementById('slider-lum');
-const $hueValue        = document.getElementById('hue-value');
-const $satValue        = document.getElementById('sat-value');
-const $lumValue        = document.getElementById('lum-value');
-const $seekBar         = document.getElementById('seek-bar');
-const $seekFill        = document.getElementById('seek-bar-fill');
-
-let animFrameId = null;
-let spectrumFrameCount = 0;
-let _onEndedRef = null;   // stored for seek re-use
-
-// ════════════════════════════════════════════════════════════════════
-// PHOTOSENSITIVITY WARNING GATE
-// ════════════════════════════════════════════════════════════════════
-$btnWarningAccept.addEventListener('click', () => {
-  // 1. Ocultar el contenedor de advertencia rápidamente con animación
-  const $warningContainer = $warningScreen.querySelector('.warning-container');
-  if ($warningContainer) {
-    $warningContainer.style.transition = 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-    $warningContainer.style.opacity = '0';
-    $warningContainer.style.transform = 'scale(0.85) translateY(-15px)';
-  }
-
-  // Desvanecer el fondo de la pantalla de advertencia suavemente
-  $warningScreen.style.transition = 'background 0.9s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.9s cubic-bezier(0.16, 1, 0.3, 1)';
-  $warningScreen.style.background = 'rgba(0, 0, 0, 0)';
-  $warningScreen.style.backdropFilter = 'blur(0px)';
-  if ($warningScreen.style.webkitBackdropFilter !== undefined) {
-    $warningScreen.style.webkitBackdropFilter = 'blur(0px)';
-  }
-
-  // 2. Crear y disparar la explosión caleidoscópica de cristales rotos (Shatter Glass)
-  const shatterContainer = document.createElement('div');
-  shatterContainer.id = 'shatter-container';
-  document.body.appendChild(shatterContainer);
-
-  const numSectors = 8;
-  const shardsPerSector = 5;
-
-  for (let s = 0; s < shardsPerSector; s++) {
-    // Definimos parámetros para este grupo de fragmentos simétricos
-    const baseAngle = Math.random() * (Math.PI * 2 / numSectors);
-    const speed = 250 + Math.random() * 550; // pixeles a viajar
-    const size = 12 + Math.random() * 24;    // tamaño del fragmento
-    const rotation = 180 + Math.random() * 540; // rotación final
-    const delay = Math.random() * 0.08;      // retraso staggered
-
-    // Formular un polígono aleatorio afilado para el fragmento
-    const p1 = `${Math.random() * 40}% ${Math.random() * 40}%`;
-    const p2 = `${60 + Math.random() * 40}% ${Math.random() * 20}%`;
-    const p3 = `${50 + Math.random() * 50}% ${60 + Math.random() * 40}%`;
-    const p4 = `${Math.random() * 30}% ${70 + Math.random() * 30}%`;
-    const clipPath = `polygon(${p1}, ${p2}, ${p3}, ${p4})`;
-
-    // Replicar simétricamente en cada sector (caleidoscopio)
-    for (let sec = 0; sec < numSectors; sec++) {
-      const angle = baseAngle + (sec * (Math.PI * 2 / numSectors));
-      const dx = Math.cos(angle) * speed;
-      const dy = Math.sin(angle) * speed;
-
-      const shard = document.createElement('div');
-      shard.className = 'glass-shard';
-      shard.style.width = `${size}px`;
-      shard.style.height = `${size}px`;
-      shard.style.clipPath = clipPath;
-      shard.style.left = '50%';
-      shard.style.top = '50%';
-      shard.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)';
-
-      // Color e iluminación prismática según el sector
-      const hue = (sec * 45 + (s * 15)) % 360;
-      shard.style.background = `linear-gradient(135deg, hsla(${hue}, 85%, 75%, 0.45) 0%, hsla(${(hue + 45) % 360}, 85%, 60%, 0.1) 100%)`;
-      shard.style.boxShadow = `inset 0 0 4px hsla(${hue}, 90%, 80%, 0.6)`;
-      shard.style.border = `0.5px solid hsla(${hue}, 90%, 85%, 0.3)`;
-
-      shatterContainer.appendChild(shard);
-
-      // Animar en el siguiente frame
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          shard.style.transition = 'transform 1.3s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 1.3s cubic-bezier(0.1, 0.8, 0.2, 1)';
-          shard.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(0) rotate(${rotation}deg)`;
-          shard.style.opacity = '0';
-        }, delay * 1000);
-      });
-    }
-  }
-
-  // 3. A mitad de la explosión (250ms), preparamos e inicializamos la app de fondo
-  setTimeout(() => {
-    $app.classList.remove('hidden');
+  // Initialize UI (Presets)
+  for (let i = 0; i < visual.numPresets; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = i < 10 ? `0${i}` : i.toString();
+    if (i === 0) btn.classList.add('active');
     
-    // Instanciar aquí para evitar bloqueos de autoplay
-    analyzer  = new AudioAnalyzer();
-    hydraCtrl = new HydraController();
-    recorder  = new VideoRecorder();
-    
-    initHydra();
-  }, 250);
-
-  // 4. Limpiar los nodos del DOM de la explosión y ocultar completamente la pantalla de advertencia
-  setTimeout(() => {
-    shatterContainer.remove();
-    $warningScreen.style.display = 'none';
-  }, 1300);
-});
-
-// ════════════════════════════════════════════════════════════════════
-// INIT HYDRA (deferred until warning accepted)
-// ════════════════════════════════════════════════════════════════════
-function getOptimizedDimensions() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let w = window.innerWidth * dpr;
-  let h = window.innerHeight * dpr;
-  
-  // Optimize resolution dynamically: limit physical width to 960px on mobile for 60 FPS
-  const isMobile = window.innerWidth <= 768;
-  const maxW = isMobile ? 960 : 1500;
-  
-  if (w > maxW) {
-    h = Math.round(h * (maxW / w));
-    w = maxW;
-  }
-  return { w, h };
-}
-
-function initHydra() {
-  const { w, h } = getOptimizedDimensions();
-  $hydraCanvas.width  = w;
-  $hydraCanvas.height = h;
-  hydraCtrl.init($hydraCanvas);
-
-  window.addEventListener('resize', () => {
-    const { w, h } = getOptimizedDimensions();
-    $hydraCanvas.width  = w;
-    $hydraCanvas.height = h;
-    hydraCtrl.setResolution(w, h);
-  });
-}
-
-let loopFrameCount = 0;
-function loop() {
-  animFrameId = requestAnimationFrame(loop);
-  loopFrameCount++;
-
-  analyzer.update();
-
-  const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
-
-  // Core bands (linear scaling, absolutely safe now that audio-analyzer is [0.0, 1.0])
-  const power = sens;
-  window.audioBass = Math.min(analyzer.bass * power, power * 1.5);
-  window.audioMid  = Math.min(analyzer.mid * power, power * 1.5);
-  window.audioHigh = Math.min(analyzer.high * power, power * 1.5);
-  window.audioVol  = Math.min(analyzer.overall * power, power * 1.5);
-
-  // Extended bands
-  window.audioSub        = analyzer.sub * power;
-  window.audioLowMid     = analyzer.lowMid * power;
-  window.audioPresence   = analyzer.presence * power;
-  window.audioBrilliance = analyzer.brilliance * power;
-
-  // Beat transient triggers (not directly scaled to preserve 0.0 - 1.0 normalization)
-  window.audioBeat       = analyzer.bassBeat;
-  window.audioBeatMid    = analyzer.midBeat;
-
-
-  
-  // Throttle slower UI updates to 10 FPS (saves CPU layout paints!)
-  if (loopFrameCount % 6 === 0) {
-    updateTime();
-    updateSeekBar();
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// TIME & SEEK BAR
-// ════════════════════════════════════════════════════════════════════
-function updateTime() {
-  if (!analyzer.duration || analyzer.isMic) return;
-  $trackTime.textContent = `${fmt(analyzer.currentTime)} / ${fmt(analyzer.duration)}`;
-}
-
-function updateSeekBar() {
-  if (!analyzer.duration || analyzer.isMic || _seeking) return;
-  const pct = (analyzer.currentTime / analyzer.duration) * 1000;
-  $seekBar.value = pct;
-  $seekFill.style.width = `${(pct / 1000) * 100}%`;
-}
-
-function fmt(secs) {
-  const m = Math.floor(secs / 60);
-  const s = Math.floor(secs % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-}
-
-// Seek interaction
-let _seeking = false;
-$seekBar.addEventListener('mousedown', () => { _seeking = true; });
-$seekBar.addEventListener('touchstart', () => { _seeking = true; }, { passive: true });
-
-$seekBar.addEventListener('input', () => {
-  if (!analyzer.duration || analyzer.isMic) return;
-  const t = (parseInt($seekBar.value, 10) / 1000) * analyzer.duration;
-  $seekFill.style.width = `${($seekBar.value / 1000) * 100}%`;
-  $trackTime.textContent = `${fmt(t)} / ${fmt(analyzer.duration)}`;
-});
-
-$seekBar.addEventListener('change', () => {
-  _seeking = false;
-  if (!analyzer.duration || analyzer.isMic) return;
-  const t = (parseInt($seekBar.value, 10) / 1000) * analyzer.duration;
-  analyzer.seek(t, onAudioEnded);
-  if (recorder.isRecording) stopRecording();
-});
-
-// Oyentes globales para liberar robustamente el arrastre en cualquier parte
-window.addEventListener('mouseup', () => { _seeking = false; });
-window.addEventListener('touchend', () => { _seeking = false; });
-
-// ════════════════════════════════════════════════════════════════════
-// FILE LOADING
-// ════════════════════════════════════════════════════════════════════
-const AUDIO_EXT = /\.(mp3|wav|flac|ogg|m4a|aac|aiff|opus|weba|caf|au|wma|mp4)$/i;
-
-async function handleFile(file) {
-  if (!file) return;
-
-  if (!file.type.startsWith('audio/') && !AUDIO_EXT.test(file.name)) {
-    showError('Por favor selecciona un archivo de audio válido.');
-    return;
-  }
-
-  try {
-    const prevName = $trackName.textContent;
-    $trackName.textContent = 'DECODIFICANDO AUDIO...';
-    
-    const duration = await analyzer.loadFile(file);
-    const name = file.name.replace(/\\.[^.]+$/, '');
-    $trackName.textContent = name.length > 32 ? name.slice(0, 30) + '…' : name;
-    $trackTime.textContent = `0:00 / ${fmt(duration)}`;
-
-    showPlayer(false);
-    setPlayState(false);
-    if (!animFrameId) loop();
-  } catch (err) {
-    console.error('[Synthestesia] Error loading audio:', err);
-    showError('No se pudo decodificar el archivo. Intenta con otro formato.');
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// MICROPHONE
-// ════════════════════════════════════════════════════════════════════
-$btnMicStart.addEventListener('click', async () => {
-  try {
-    await analyzer.initMic();
-    $trackName.textContent = 'MICRÓFONO EN VIVO';
-    $trackTime.textContent = '—';
-    $seekBar.disabled = true;
-    $seekFill.style.width = '0%';
-    showPlayer(true);
-    setPlayState(true);
-    if (!animFrameId) loop();
-  } catch (err) {
-    showError('No se pudo acceder al micrófono. Verifica los permisos del navegador.');
-    console.error('[Synthestesia] Mic error:', err);
-  }
-});
-
-function showPlayer(isMic) {
-  $uploadScreen.classList.add('hidden');
-  $controlBar.classList.remove('hidden');
-  $hydraCanvas.classList.add('visible');
-  if (hydraCtrl && typeof hydraCtrl.applyPreset === 'function') hydraCtrl.applyPreset(hydraCtrl.currentPreset || 0);
-  $colorPanel.classList.add('hidden');
-  $btnPlay.disabled = isMic;
-  $btnStop.disabled = false;
-
-  if (isMic) {
-    $micIndicator.classList.remove('hidden');
-    $trackTime.textContent = '—';
-  } else {
-    $micIndicator.classList.add('hidden');
-    $seekBar.disabled = false;
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// PLAYBACK CONTROLS
-// ════════════════════════════════════════════════════════════════════
-$btnPlay.addEventListener('click', () => {
-  _onEndedRef = onAudioEnded;
-  analyzer.play(_onEndedRef);
-  setPlayState(true);
-});
-
-$btnStop.addEventListener('click', () => {
-  analyzer.stop();
-  setPlayState(false);
-  if (recorder.isRecording) stopRecording();
-});
-
-function onAudioEnded() {
-  setPlayState(false);
-  $seekBar.value = 0;
-  $seekFill.style.width = '0%';
-  if (recorder.isRecording) stopRecording();
-}
-
-function setPlayState(playing) {
-  $btnPlay.disabled  = playing || analyzer.isMic;
-  $btnStop.disabled  = !playing;
-  resetHideTimer();
-}
-
-// ════════════════════════════════════════════════════════════════════
-// SNAPSHOT (PNG export)
-// ════════════════════════════════════════════════════════════════════
-$btnSnapshot.addEventListener('click', () => {
-  const link = document.createElement('a');
-  const safeName = ($trackName.textContent || 'synthestesia')
-    .replace(/[^a-z0-9_\-]/gi, '_').toLowerCase();
-  link.download = `${safeName}_frame_${Date.now()}.png`;
-  link.href = $hydraCanvas.toDataURL('image/png');
-  link.click();
-});
-
-// ════════════════════════════════════════════════════════════════════
-// WEB MIDI
-// ════════════════════════════════════════════════════════════════════
-let midiAccess = null;
-
-$btnMidi.addEventListener('click', async () => {
-  if (!navigator.requestMIDIAccess) {
-    showError('Web MIDI no está soportado en este navegador. Prueba con Chrome.');
-    return;
-  }
-
-  try {
-    midiAccess = await navigator.requestMIDIAccess();
-    attachMidiListeners();
-    $midiIndicator.classList.remove('hidden');
-    $btnMidi.classList.add('active');
-
-    midiAccess.onstatechange = () => attachMidiListeners();
-
-    const count = [...midiAccess.inputs.values()].length;
-    if (count === 0) showError('MIDI conectado — no se detectaron dispositivos.');
-    else showToast(`MIDI: ${count} dispositivo(s) detectado(s)`);
-  } catch (err) {
-    showError('No se pudo acceder a MIDI: ' + err.message);
-  }
-});
-
-function attachMidiListeners() {
-  if (!midiAccess) return;
-  midiAccess.inputs.forEach(input => {
-    input.onmidimessage = handleMidiMessage;
-  });
-}
-
-function handleMidiMessage({ data }) {
-  const [status, cc, value] = data;
-  const norm = value / 127;
-
-  // CC 1  → Hue      (modwheel)
-  // CC 2  → Sat
-  // CC 7  → Lum      (volume fader on most controllers)
-  // CC 74 → Hue      (filter on many synths)
-  if (cc === 1 || cc === 74) {
-    window.colorH = Math.round(norm * 360);
-    $sliderHue.value = window.colorH;
-    $hueValue.textContent = `${window.colorH}°`;
-    updateColorPreview();
-  } else if (cc === 2) {
-    window.colorS = Math.round(norm * 100);
-    $sliderSat.value = window.colorS;
-    $satValue.textContent = `${window.colorS}%`;
-    updateColorPreview();
-  } else if (cc === 7) {
-    window.colorL = Math.round(norm * 100);
-    $sliderLum.value = window.colorL;
-    $lumValue.textContent = `${window.colorL}%`;
-    updateColorPreview();
-  }
-
-  // Program Change (0xC0) → switch preset
-  if ((status & 0xF0) === 0xC0) {
-    const idx = value % hydraCtrl.numPresets;
-    hydraCtrl.applyPreset(idx);
-    $presetBtns.forEach((b, i) => b.classList.toggle('active', i === idx));
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// LIVE CODE EDITOR
-// ════════════════════════════════════════════════════════════════════
-$btnCustomPreset.addEventListener('click', () => {
-  $customPanel.classList.toggle('hidden');
-  $colorPanel.classList.add('hidden');
-});
-
-// ════════════════════════════════════════════════════════════════════
-// SCREEN SHARING (DJS LIVE SCREEN FEED IN HYDRA)
-// ════════════════════════════════════════════════════════════════════
-async function startScreenShareSession() {
-  const stream = await hydraCtrl.toggleScreenCapture();
-  if (!stream) return;
-
-  $btnScreen.classList.add('active');
-  
-  // Extraer track de audio si existe
-  const audioTracks = stream.getAudioTracks();
-  if (audioTracks.length > 0) {
-    // Si hay audio, ruteamos el stream al analizador
-    const audioStream = new MediaStream(audioTracks);
-    await analyzer.initSystemAudio(audioStream);
-    
-    $trackName.textContent = 'AUDIO DE VENTANA COMPARTIDA';
-    $trackTime.textContent = '—';
-    $seekBar.disabled = true;
-    $seekFill.style.width = '0%';
-    
-    showPlayer(true);
-    setPlayState(true);
-    
-    showToast('¡Reactividad por audio de ventana activa!');
-  } else {
-    // Si no hay audio, informamos al usuario
-    showToast('Visual de ventana activa. Sin audio de ventana (marcar "Compartir audio").');
-  }
-
-  if (!animFrameId) loop();
-
-  // Escuchar el evento final (por si cancela desde la barra flotante del navegador)
-  const videoTrack = stream.getVideoTracks()[0];
-  if (videoTrack) {
-    videoTrack.onended = () => {
-      stopScreenShareSession();
+    btn.onclick = () => {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      visual.applyPreset(i);
     };
+    $presetsContainer.appendChild(btn);
   }
-}
 
-async function stopScreenShareSession() {
-  hydraCtrl.stopScreenCapture();
-  $btnScreen.classList.remove('active');
-  
-  // Si el analizador estaba usando el audio de la ventana compartida, volver al estado anterior
-  if (analyzer.isMic && $trackName.textContent === 'AUDIO DE VENTANA COMPARTIDA') {
-    analyzer.stop();
-    setPlayState(false);
-    
-    // Restaurar si había un archivo cargado
-    if (analyzer.audioBuffer) {
-      const name = $fileInput.files[0]?.name.replace(/\.[^.]+$/, '') || 'Archivo de audio';
-      $trackName.textContent = name.length > 32 ? name.slice(0, 30) + '…' : name;
-      $trackTime.textContent = `0:00 / ${fmt(analyzer.duration)}`;
-      showPlayer(false);
-    } else {
-      // Si no, reiniciar al estado de subida
-      $btnReset.click();
-    }
-  }
-}
-
-$btnScreen.addEventListener('click', async () => {
-  try {
-    if (hydraCtrl.screenActive) {
-      await stopScreenShareSession();
-    } else {
-      await startScreenShareSession();
-    }
-  } catch (err) {
-    console.error('[Synthestesia] Screen share error:', err);
-    showError('No se pudo iniciar la captura de pantalla. Asegúrate de marcar "Compartir audio" en el diálogo.');
-  }
-});
-
-$btnCpClose.addEventListener('click', () => {
-  $customPanel.classList.add('hidden');
-});
-
-$btnCpRun.addEventListener('click', () => {
-  const code = $cpCode.value.trim();
-  if (!code) return;
-  try {
-    // eslint-disable-next-line no-eval
-    eval(code);
-    $cpError.classList.add('hidden');
-    $cpError.textContent = '';
-    // Deactivate all preset buttons since we're in custom mode
-    $presetBtns.forEach(b => b.classList.remove('active'));
-  } catch (err) {
-    $cpError.textContent = err.message;
-    $cpError.classList.remove('hidden');
-  }
-});
-
-// Ctrl+Enter to run
-$cpCode.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    e.preventDefault();
-    $btnCpRun.click();
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════
-// COLOR CONTROLS
-// ════════════════════════════════════════════════════════════════════
-function updateColorPreview() {
-  $colorPreview.style.background = `hsl(${window.colorH}, ${window.colorS}%, ${window.colorL}%)`;
-}
-
-$btnToggleColor.addEventListener('click', () => {
-  $colorPanel.classList.toggle('hidden');
-  $customPanel.classList.add('hidden');
-});
-
-$sliderHue.addEventListener('input', (e) => {
-  window.colorH = parseInt(e.target.value, 10);
-  $hueValue.textContent = `${window.colorH}°`;
-  updateColorPreview();
-  hydraCtrl.applyPreset(hydraCtrl.currentPreset);
-});
-$sliderSat.addEventListener('input', (e) => {
-  window.colorS = parseInt(e.target.value, 10);
-  $satValue.textContent = `${window.colorS}%`;
-  updateColorPreview();
-  hydraCtrl.applyPreset(hydraCtrl.currentPreset);
-});
-$sliderLum.addEventListener('input', (e) => {
-  window.colorL = parseInt(e.target.value, 10);
-  $lumValue.textContent = `${window.colorL}%`;
-  updateColorPreview();
-  hydraCtrl.applyPreset(hydraCtrl.currentPreset);
-});
-
-// HEX to HSL converter
-function hexToHSL(H) {
-  let r = 0, g = 0, b = 0;
-  if (H.length === 4) {
-    r = "0x" + H[1] + H[1]; g = "0x" + H[2] + H[2]; b = "0x" + H[3] + H[3];
-  } else if (H.length === 7) {
-    r = "0x" + H[1] + H[2]; g = "0x" + H[3] + H[4]; b = "0x" + H[5] + H[6];
-  }
-  r /= 255; g /= 255; b /= 255;
-  let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin, h = 0, s = 0, l = 0;
-  if (delta === 0) h = 0;
-  else if (cmax === r) h = ((g - b) / delta) % 6;
-  else if (cmax === g) h = (b - r) / delta + 2;
-  else h = (r - g) / delta + 4;
-  h = Math.round(h * 60);
-  if (h < 0) h += 360;
-  l = (cmax + cmin) / 2;
-  s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-  s = +(s * 100).toFixed(1);
-  l = +(l * 100).toFixed(1);
-  return { h, s, l };
-}
-
-const $colorPicker = document.getElementById('color-picker');
-if ($colorPicker) {
-  $colorPicker.addEventListener('input', (e) => {
-    const hsl = hexToHSL(e.target.value);
-    window.colorH = hsl.h; window.colorS = hsl.s; window.colorL = hsl.l;
-    $sliderHue.value = hsl.h; $sliderSat.value = hsl.s; $sliderLum.value = hsl.l;
-    $hueValue.textContent = `${hsl.h}°`;
-    $satValue.textContent = `${hsl.s}%`;
-    $lumValue.textContent = `${hsl.l}%`;
-    updateColorPreview();
-    hydraCtrl.applyPreset(hydraCtrl.currentPreset);
+  // Event: Accept Warning
+  $btnAccept.addEventListener('click', () => {
+    $warningScreen.style.opacity = '0';
+    setTimeout(() => {
+      $warningScreen.style.display = 'none';
+      visual.init($canvas);
+      loop();
+    }, 500);
   });
-}
 
-updateColorPreview();
-
-// ════════════════════════════════════════════════════════════════════
-// PRESET SELECTOR
-// ════════════════════════════════════════════════════════════════════
-$presetBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const idx = parseInt(btn.dataset.preset, 10);
-    hydraCtrl.applyPreset(idx);
-    $presetBtns.forEach(b => b.classList.toggle('active', b === btn));
-    // Clear custom editor error when switching to a built-in preset
-    $cpError.classList.add('hidden');
+  // Event: Mic
+  $btnMic.addEventListener('click', async () => {
+    if (!audio.isActive) {
+      const ok = await audio.start();
+      if (ok) {
+        $btnMic.classList.add('active');
+        $btnMic.style.color = 'var(--accent)';
+      }
+    }
   });
-});
 
-// ════════════════════════════════════════════════════════════════════
-// RECORDING
-// ════════════════════════════════════════════════════════════════════
-$btnRecord.addEventListener('click', async () => {
-  if (recorder.isRecording) await stopRecording();
-  else await startRecording();
-});
+  // Event: Screen Capture
+  $btnScreen.addEventListener('click', async () => {
+    try {
+      await visual.toggleScreenCapture();
+      if (visual.screenActive) {
+        $btnScreen.classList.add('active');
+        $btnScreen.style.color = 'var(--accent)';
+      } else {
+        $btnScreen.classList.remove('active');
+        $btnScreen.style.color = '';
+      }
+    } catch (e) {
+      console.warn("Screen capture failed:", e);
+    }
+  });
 
-async function startRecording() {
-  $colorPanel.classList.add('hidden');
+  // Event: Fullscreen
+  $btnFullscreen.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  });
 
-  if (!analyzer.isMic) {
-    analyzer.replay(async () => {
-      await stopRecording();
-      setPlayState(false);
+  // Event: Hue Slider
+  if ($hueSlider) {
+    $hueSlider.addEventListener('input', (e) => {
+      window.colorH = parseInt(e.target.value);
     });
-    setPlayState(true);
   }
 
-  const audioStream = analyzer.getAudioStream();
-  await recorder.start($hydraCanvas, audioStream);
+  // Animation Loop
+  function loop() {
+    requestAnimationFrame(loop);
 
-  $recLabel.textContent = 'DETENER';
-  $btnRecord.classList.add('recording');
-  $recIndicator.classList.remove('hidden');
-}
-
-async function stopRecording() {
-  const url = await recorder.stop();
-  $recLabel.textContent = 'REC';
-  $btnRecord.classList.remove('recording');
-  $recIndicator.classList.add('hidden');
-
-  if (url) {
-    const safeName = ($trackName.textContent || 'synthestesia')
-      .replace(/[^a-z0-9_\\-]/gi, '_').toLowerCase();
+    const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.0;
+    
+    // Update audio engine
+    if (audio.isActive) {
+      audio.update(sens);
       
-    // Determine the correct extension
-    const mime = recorder.mediaRecorder ? recorder.mediaRecorder.mimeType : '';
-    const ext = mime.includes('mp4') ? 'mp4' : 'webm';
-    
-    $previewVideo.src = url;
-    $btnDownloadModal.download = `${safeName}_synthestesia.${ext}`;
-    $btnDownloadModal.href = url;
-    $videoPreviewModal.classList.remove('hidden');
-    
-    // Reproducir automáticamente la vista previa
-    $previewVideo.play().catch(e => console.log('Autoplay prevent:', e));
-  }
-}
-
-$btnCloseModal.addEventListener('click', () => {
-  $videoPreviewModal.classList.add('hidden');
-  $previewVideo.pause();
-  $previewVideo.src = '';
-});
-
-
-// ════════════════════════════════════════════════════════════════════
-// RESET
-// ════════════════════════════════════════════════════════════════════
-$btnReset.addEventListener('click', () => {
-  analyzer.unload();
-  hydraCtrl.stopScreenCapture();
-  $btnScreen.classList.remove('active');
-  if (recorder.isRecording) recorder.stop();
-
-  window.audioBass = window.audioMid = window.audioHigh = window.audioVol = 0;
-  window.audioSub  = window.audioLowMid = window.audioPresence = window.audioBrilliance = 0;
-
-  $uploadScreen.classList.remove('hidden');
-  $controlBar.classList.add('hidden');
-  $videoPreviewModal.classList.add('hidden');
-  $colorPanel.classList.add('hidden');
-  $customPanel.classList.add('hidden');
-  
-  $recIndicator.classList.add('hidden');
-  $midiIndicator.classList.add('hidden');
-  $micIndicator.classList.add('hidden');
-  $btnRecord.classList.remove('recording');
-  $recLabel.textContent = 'REC';
-  $seekBar.value = 0;
-  $seekFill.style.width = '0%';
-  $seekBar.disabled = false;
-  $fileInput.value = '';
-
-  if (animFrameId) {
-    cancelAnimationFrame(animFrameId);
-    animFrameId = null;
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════
-// DRAG & DROP
-// ════════════════════════════════════════════════════════════════════
-$dropZone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  $dropZone.classList.add('drag-over');
-});
-['dragleave', 'dragend'].forEach(evt =>
-  $dropZone.addEventListener(evt, () => $dropZone.classList.remove('drag-over'))
-);
-$dropZone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  $dropZone.classList.remove('drag-over');
-  handleFile(e.dataTransfer.files[0]);
-});
-$fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-// ════════════════════════════════════════════════════════════════════
-// UTILITIES
-// ════════════════════════════════════════════════════════════════════
-function showError(msg) {
-  _toast(msg, '#ff3f3f', 'rgba(26,0,0,0.95)', 4500);
-}
-
-function showToast(msg) {
-  _toast(msg, '#00ff55', 'rgba(0,20,8,0.95)', 3000);
-}
-
-function _toast(msg, color, bg, duration) {
-  const el = document.createElement('div');
-  el.style.cssText = `
-    position:fixed; top:20px; left:50%; transform:translateX(-50%);
-    background:${bg}; border:1px solid ${color}; color:${color};
-    font-family:'Space Mono',monospace; font-size:11px; letter-spacing:0.08em;
-    padding:10px 22px; border-radius:2px; z-index:999;
-    animation:fadeIn 0.2s ease; white-space:nowrap;
-  `;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), duration);
-}
-
-// ════════════════════════════════════════════════════════════════════
-// IMMERSIVE CONTROL AUTO-HIDE
-// ════════════════════════════════════════════════════════════════════
-let hideTimeout = null;
-
-function resetHideTimer() {
-  if (hideTimeout) clearTimeout(hideTimeout);
-  
-  if ($controlBar) $controlBar.classList.remove('hide-ui');
-  document.body.classList.remove('nocursor');
-  
-  if (analyzer && analyzer.isPlaying) {
-    const isPanelOpen = ($colorPanel && !$colorPanel.classList.contains('hidden')) || 
-                        ($customPanel && !$customPanel.classList.contains('hidden'));
-    if (isPanelOpen) return;
-    
-    hideTimeout = setTimeout(() => {
-      if ($controlBar) $controlBar.classList.add('hide-ui');
-      document.body.classList.add('nocursor');
-    }, 3000);
-  }
-}
-
-document.addEventListener('mousemove', resetHideTimer);
-document.addEventListener('keydown', resetHideTimer);
-document.addEventListener('click', resetHideTimer);
-
-// Activar/pausar reproducción con la barra espaciadora
-window.addEventListener('keydown', (e) => {
-  if (e.key === ' ' || e.code === 'Space') {
-    const active = document.activeElement;
-    if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) {
-      return;
-    }
-    
-    if (!$controlBar || $controlBar.classList.contains('hidden')) return;
-    if (!analyzer || analyzer.isMic) return;
-
-    e.preventDefault(); // Evitar scroll
-    resetHideTimer();
-
-    if (analyzer.isPlaying) {
-      $btnStop.click();
-    } else {
-      $btnPlay.click();
+      // Inject to globals
+      window.audioBass = audio.bass;
+      window.audioMid = audio.mid;
+      window.audioHigh = audio.high;
+      window.audioVol = audio.overall;
+      window.audioBeat = audio.beat;
     }
   }
+
+  // Resize handler
+  window.addEventListener('resize', () => {
+    const dpr = window.devicePixelRatio || 1;
+    $canvas.width = window.innerWidth * dpr;
+    $canvas.height = window.innerHeight * dpr;
+    visual.setResolution($canvas.width, $canvas.height);
+  });
 });
