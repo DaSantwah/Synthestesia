@@ -86,90 +86,101 @@ export class VisualEngine {
   applyPreset(index) {
     this.currentPreset = ((index % this.numPresets) + this.numPresets) % this.numPresets;
     const presets = [
-      this._p0_bassDisplacement,
-      this._p1_shatterGlass,
-      this._p2_acidWash,
-      this._p3_cyberScan,
-      this._p4_neonTear,
+      this._p0_liquidFeedback,
+      this._p1_hyperSpace,
+      this._p2_glassEcho,
+      this._p3_chromaticFluid,
+      this._p4_neonAbyss,
       this._p5_strobeFractal,
-      this._p6_liquidData,
+      this._p6_cyberMelt,
       this._p7_systemCollapse
     ];
+    // Reset buffers before switching
     solid(0,0,0,1).out(o0);
-    presets[this.currentPreset].bind(this)();
+    solid(0,0,0,1).out(o1);
+    
+    setTimeout(() => {
+      presets[this.currentPreset].bind(this)();
+    }, 50);
   }
 
-  // 0. Bass Displacement: The screen pulses and pixelates heavily on kick drums.
-  _p0_bassDisplacement() {
+  // 0. Liquid Feedback: Infinite melting mirror that reacts to bass transients.
+  _p0_liquidFeedback() {
     this._canvas()
-      .modulatePixelate(noise(5, 0.1), () => 100 + window.audioBass * 100)
-      .modulate(osc(10).rotate(1.57), () => window.audioBeat * 0.5)
-      .colorama(() => window.audioMid * 0.05)
-      .blend(solid(...this._c(() => window.audioBeat * 0.5)), 0.3)
-      .out();
+      .modulate(noise(2, 0.01).modulate(src(o0), 0.1), () => window.audioBass * 0.5)
+      .blend(src(o0).scale(() => 1.001 + window.audioBeat * 0.02).scrollY(0.002), 0.85)
+      .saturate(1.05)
+      .colorama(() => window.audioHigh * 0.02)
+      .out(o0);
   }
 
-  // 1. Shatter Glass: The screen fractures into Voronoi shards that spread with audio energy.
-  _p1_shatterGlass() {
-    this._canvas()
-      .modulate(voronoi(() => 5 + window.audioMid * 5, 2), () => window.audioBass * 1.5)
-      .diff(src(o0).scale(() => 0.98 + window.audioBeat * 0.05))
-      .saturate(() => 1.0 + window.audioHigh)
-      .out();
-  }
-
-  // 2. Acid Wash: Fluid melting of the screen capture with deep color saturation.
-  _p2_acidWash() {
-    this._canvas()
-      .modulateRotate(noise(2, 0.1), () => window.audioBass * 0.8)
-      .colorama(() => window.audioVol * 0.1)
-      .blend(src(o0).scale(1.01).scrollX(() => window.audioMid * 0.01), 0.5)
-      .out();
-  }
-
-  // 3. Cyber Scan: Vertical scanning lines that tear the screen horizontally on bass drops.
-  _p3_cyberScan() {
-    this._canvas()
-      .modulateScrollX(osc(40, 0).rotate(Math.PI/2), () => window.audioBass * 0.5)
-      .add(osc(60, 0.1).color(...this._c(() => window.audioHigh)), () => window.audioMid)
-      .invert(() => window.audioBeat > 0.5 ? 1 : 0)
-      .out();
-  }
-
-  // 4. Neon Tear: High contrast kaleidoscope that multiplies the screen capture.
-  _p4_neonTear() {
+  // 1. Hyper Space: Deep 3D-like zoom with chromatic aberration on beats.
+  _p1_hyperSpace() {
     this._canvas()
       .kaleid(4)
-      .modulate(osc(10).rotate(time), () => window.audioBass * 0.3)
-      .diff(solid(...this._c(() => window.audioBeat)))
-      .scale(() => 1.0 + window.audioMid * 0.2)
-      .out();
+      .modulateScale(osc(4).rotate(time * 0.1), () => window.audioMid * 0.5)
+      .diff(src(o0).scale(() => 0.95 - window.audioBeat * 0.1).rotate(0.01))
+      .color(...this._c(() => 1.0 + window.audioBeat))
+      .out(o0);
   }
 
-  // 5. Strobe Fractal: Rapid scaling and feedback loops triggered by transients.
+  // 2. Glass Echo: Smooth, elegant glassmorphic echoes of the screen.
+  _p2_glassEcho() {
+    this._canvas()
+      .luma(0.2)
+      .modulatePixelate(noise(5), () => 100 + window.audioBass * 100)
+      .layer(src(o0).mask(shape(4, 0.5, 0.1)).scale(1.05).luma(0.1))
+      .blend(src(o0).scale(1.01), 0.8)
+      .out(o0);
+  }
+
+  // 3. Chromatic Fluid: Intense color separation and fluid smearing.
+  _p3_chromaticFluid() {
+    this._canvas()
+      .color(1, 0, 0).shift(0.01, 0)
+      .layer(this._canvas().color(0, 1, 0).mask(shape(99, 0.5, 0.1)))
+      .layer(this._canvas().color(0, 0, 1).shift(-0.01, 0))
+      .modulate(src(o0), () => window.audioBass * 0.3)
+      .blend(src(o0).scale(1.02), 0.9)
+      .out(o0);
+  }
+
+  // 4. Neon Abyss: Deep space void with neon edges tracing the screen capture.
+  _p4_neonAbyss() {
+    this._canvas()
+      .edge(() => window.audioHigh * 2)
+      .color(...this._c())
+      .modulate(noise(3, 0.1), () => window.audioBass * 0.5)
+      .add(src(o0).scrollY(-0.01).scale(0.99), 0.6)
+      .out(o0);
+  }
+
+  // 5. Strobe Fractal: Rapid geometric expansion.
   _p5_strobeFractal() {
     this._canvas()
-      .modulateScale(noise(4), () => window.audioBass * 1.5)
+      .modulateRotate(osc(10), () => window.audioMid * 0.5)
+      .kaleid(() => 2 + Math.floor(window.audioBeat * 4))
       .diff(src(o0).scale(0.9))
       .add(solid(...this._c(() => window.audioBeat)), 0.5)
-      .out();
+      .out(o0);
   }
 
-  // 6. Liquid Data: The screen turns into an audio-reactive fluid grid.
-  _p6_liquidData() {
+  // 6. Cyber Melt: Heavy vertical distortion like a melting VHS.
+  _p6_cyberMelt() {
     this._canvas()
-      .modulate(shape(4).repeat(10, 10), () => window.audioBass * 0.5)
-      .scrollY(() => window.audioMid * 0.2)
-      .colorama(() => window.audioHigh * 0.05)
-      .out();
+      .modulateScrollX(osc(40, 0).rotate(Math.PI/2), () => window.audioBass * 0.5)
+      .blend(src(o0).scrollY(() => -0.01 - window.audioBeat * 0.05), 0.8)
+      .saturate(() => 1.0 + window.audioBeat)
+      .out(o0);
   }
 
-  // 7. System Collapse: Extreme audio-reactive distortion for drops.
+  // 7. System Collapse: Pure chaos, mixing voronoi, feedback, and scale.
   _p7_systemCollapse() {
     this._canvas()
       .modulate(voronoi(10), () => window.audioVol * 2.0)
       .colorama(() => window.audioBeat * 0.5)
       .kaleid(() => 2 + Math.floor(window.audioBass * 3))
-      .out();
+      .blend(src(o0).scale(1.1).rotate(0.05), 0.5)
+      .out(o0);
   }
 }
