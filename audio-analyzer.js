@@ -228,15 +228,15 @@ export class AudioAnalyzer {
     if (this._bassCooldown > 0) this._bassCooldown--;
     if (this._midCooldown > 0) this._midCooldown--;
 
-    const rawBass  = this._bandAvg(20,   150);  // narrow low bass for kicks
-    const rawMid   = this._bandAvg(250,  1500); // narrow mid for snares/instrument strikes
-    const rawHigh  = this._bandAvg(1500, 20000);
+    const rawBass  = this._bandAvg(20,   150) / 255.0;  // narrow low bass for kicks
+    const rawMid   = this._bandAvg(250,  1500) / 255.0; // narrow mid for snares/instrument strikes
+    const rawHigh  = this._bandAvg(1500, 20000) / 255.0;
 
     // Extended bands
-    const rawSub        = this._bandAvg(20,   80);
-    const rawLowMid     = this._bandAvg(250,  800);
-    const rawPresence   = this._bandAvg(2000, 6000);
-    const rawBrilliance = this._bandAvg(6000, 20000);
+    const rawSub        = this._bandAvg(20,   80) / 255.0;
+    const rawLowMid     = this._bandAvg(250,  800) / 255.0;
+    const rawPresence   = this._bandAvg(2000, 6000) / 255.0;
+    const rawBrilliance = this._bandAvg(6000, 20000) / 255.0;
 
     const s = this.SMOOTH;
     this.bass       = s * this.bass       + (1 - s) * rawBass;

@@ -23,9 +23,9 @@ window.audioBass = 0; window.audioMid = 0; window.audioHigh = 0; window.audioVol
 window.audioSub = 0; window.audioLowMid = 0; window.audioPresence = 0; window.audioBrilliance = 0;
 window.audioBeat = 0; window.audioBeatMid = 0;
 
-import { AudioAnalyzer }  from './audio-analyzer.js';
-import { HydraController } from './hydra-controller.js';
-import { VideoRecorder }   from './recorder.js';
+import { AudioAnalyzer }  from './audio-analyzer.js?v=3';
+import { HydraController } from './hydra-controller.js?v=3';
+import { VideoRecorder }   from './recorder.js?v=3';
 
 // ── Audio globals ───────────────────────────────────────────────────
 window.audioBass       = 0;
@@ -246,12 +246,12 @@ function loop() {
 
   const sens = $sensSlider ? parseFloat($sensSlider.value) : 1.2;
 
-  // Core bands (linear and slightly boosted, avoiding extreme blowouts)
+  // Core bands (linear scaling, absolutely safe now that audio-analyzer is [0.0, 1.0])
   const power = sens;
-  window.audioBass = analyzer.bass * power;
-  window.audioMid  = analyzer.mid * power;
-  window.audioHigh = analyzer.high * power;
-  window.audioVol  = analyzer.overall * power;
+  window.audioBass = Math.min(analyzer.bass * power, power * 1.5);
+  window.audioMid  = Math.min(analyzer.mid * power, power * 1.5);
+  window.audioHigh = Math.min(analyzer.high * power, power * 1.5);
+  window.audioVol  = Math.min(analyzer.overall * power, power * 1.5);
 
   // Extended bands
   window.audioSub        = analyzer.sub * power;
