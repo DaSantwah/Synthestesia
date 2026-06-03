@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Elements
   const $canvas = document.getElementById('hydra-canvas');
   const $btnMic = document.getElementById('btn-mic');
+  const $btnUpload = document.getElementById('btn-upload');
+  const $audioUpload = document.getElementById('audio-upload');
+  const $btnRecord = document.getElementById('btn-record');
   const $btnScreen = document.getElementById('btn-screen');
   const $btnFullscreen = document.getElementById('btn-fullscreen');
   const $sensSlider = document.getElementById('sens-slider');
@@ -31,6 +34,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const $presetsContainer = document.getElementById('preset-buttons');
   const $warningScreen = document.getElementById('warning-screen');
   const $btnAccept = document.getElementById('btn-accept');
+
+  // Playback UI
+  const $playbackContainer = document.getElementById('playback-container');
+  const $timeCurrent = document.getElementById('time-current');
+  const $timeTotal = document.getElementById('time-total');
+  const $timelineSlider = document.getElementById('timeline-slider');
+
+  function formatTime(secs) {
+    if (isNaN(secs)) return "0:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  let isDraggingTimeline = false;
+  if ($timelineSlider) {
+    $timelineSlider.addEventListener('mousedown', () => isDraggingTimeline = true);
+    $timelineSlider.addEventListener('mouseup', () => isDraggingTimeline = false);
+    $timelineSlider.addEventListener('input', (e) => {
+      audio.seek(parseFloat(e.target.value));
+    });
+  }
 
   // Initialize UI (Presets)
   for (let i = 0; i < visual.numPresets; i++) {
@@ -59,12 +84,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event: Mic
   $btnMic.addEventListener('click', async () => {
-    if (!audio.isActive) {
-      const ok = await audio.start();
+    const ok = await audio.startMic();
+    if (ok) {
+      $btnMic.classList.add('active');
+      $btnMic.style.color = 'var(--accent)';
+      $btnUpload.classList.remove('active');
+      $btnUpload.style.color = '';
+    }
+  });
+
+  // Event: File Upload
+  $btnUpload.addEventListener('click', () => {
+    $audioUpload.click();
+  });
+
+  $audioUpload.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const ok = await audio.playFile(file);
       if (ok) {
-        $btnMic.classList.add('active');
-        $btnMic.style.color = 'var(--accent)';
+        $btnUpload.classList.add('active');
+        $btnUpload.style.color = 'var(--accent)';
+        $btnMic.classList.remove('active');
+        $btnMic.style.color = '';
+        if ($playbackContainer) $playbackContainer.style.display = 'block';
       }
+    }
+  });
+
+  // Event: Record
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  
+  $btnRecord.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      $btnRecord.classList.remove('active');
+      $btnRecord.style.color = '';
+    } else {
+      const stream = $canvas.captureStream(60);
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      }
+      
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `synthestesia_v3_${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+      };
+      
+      mediaRecorder.start();
+      $btnRecord.classList.add('active');
+      $btnRecord.style.color = 'var(--danger)'; // Red for recording
     }
   });
 
@@ -116,6 +197,18 @@ document.addEventListener('DOMContentLoaded', () => {
       window.audioHigh = audio.high;
       window.audioVol = audio.overall;
       window.audioBeat = audio.beat;
+
+      // Update Timeline
+      if (audio.fileAudio && $playbackContainer.style.display === 'block') {
+        const t = audio.getAudioTime();
+        const d = audio.getAudioDuration();
+        if (!isDraggingTimeline && d > 0) {
+          $timelineSlider.max = d;
+          $timelineSlider.value = t;
+          $timeCurrent.textContent = formatTime(t);
+          $timeTotal.textContent = formatTime(d);
+        }
+      }
     }
   }
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Synthestesia V3 — Premium VJ Engine</title>
+  <title>Synthestesia — Premium VJ Engine</title>
   <link rel="stylesheet" href="style.css?v=5" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,9 +24,18 @@
   <div id="control-bar">
     <div class="cb-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
       <div class="brand">
-        <h1>SYNTHESTESIA <span class="badge">V3.0</span></h1>
+        <h1>SYNTHESTESIA <span class="badge">LIVE</span></h1>
       </div>
       <div class="controls-right">
+        <!-- Input invisible for file upload -->
+        <input type="file" id="audio-upload" accept="audio/*" style="display: none;" />
+        
+        <button id="btn-upload" class="icon-btn" title="Cargar Canción Local">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </button>
+        <button id="btn-record" class="icon-btn" title="Grabar Sesión">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6"></circle></svg>
+        </button>
         <button id="btn-mic" class="icon-btn" title="Activar Micrófono">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
         </button>
@@ -53,6 +62,15 @@
         <div id="preset-buttons"></div>
       </div>
     </div>
+    
+    <!-- Reproductor de Audio Local -->
+    <div id="playback-container" style="display: none; padding: 0 32px 24px; display: none;">
+      <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+        <span id="time-current" style="font-family: var(--mono); font-size: 10px; color: var(--muted);">0:00</span>
+        <input type="range" id="timeline-slider" min="0" max="100" value="0" style="flex: 1;" />
+        <span id="time-total" style="font-family: var(--mono); font-size: 10px; color: var(--muted);">0:00</span>
+      </div>
+    </div>
   </div>
 
   <!-- Epilepsy Warning -->
@@ -61,7 +79,7 @@
       <div class="warning-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
       </div>
-      <h2 class="warning-title">ADVERTENCIA V3</h2>
+      <h2 class="warning-title">ADVERTENCIA</h2>
       <p class="warning-text">
         Este motor visual utiliza shaders matemáticos y flashes que pueden ser perjudiciales para personas con epilepsia fotosensible.<br><br>
         Al aceptar, confirmas que comprendes los riesgos.
@@ -71,6 +89,6 @@
   </div>
 
   <script src="https://unpkg.com/hydra-synth"></script>
-  <script type="module" src="./app.js?v=6"></script>
+  <script type="module" src="./app.js?v=7"></script>
 </body>
 </html>

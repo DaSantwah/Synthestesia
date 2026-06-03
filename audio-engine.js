@@ -25,25 +25,79 @@ export class AudioEngine {
     this.peakEnergy = 0.01; 
   }
 
-  async start() {
+  async startMic() {
     try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === 'suspended') await this.ctx.resume();
+
+      // Stop existing stream or file if any
+      if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+      if (this.fileAudio) { this.fileAudio.pause(); this.fileAudio.src = ''; }
+      if (this.sourceNode) { this.sourceNode.disconnect(); }
+
       this.stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
       });
       
-      const source = this.ctx.createMediaStreamSource(this.stream);
-      this.analyzer = this.ctx.createAnalyser();
-      this.analyzer.fftSize = 2048;
-      this.analyzer.smoothingTimeConstant = 0.7; // Fast response
-      
-      source.connect(this.analyzer);
-      this.dataArray = new Uint8Array(this.analyzer.frequencyBinCount);
-      this.isActive = true;
+      this.sourceNode = this.ctx.createMediaStreamSource(this.stream);
+      this._setupAnalyzer();
       return true;
     } catch (err) {
       console.error("[AudioEngine] Mic access denied:", err);
       return false;
+    }
+  }
+
+  async playFile(file) {
+    try {
+      if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === 'suspended') await this.ctx.resume();
+
+      // Stop existing
+      if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+      if (this.sourceNode) { this.sourceNode.disconnect(); this.sourceNode = null; }
+      if (this.fileAudio) { this.fileAudio.pause(); }
+
+      const url = URL.createObjectURL(file);
+      this.fileAudio = new Audio(url);
+      this.fileAudio.crossOrigin = "anonymous";
+      this.fileAudio.loop = true;
+      await this.fileAudio.play();
+
+      this.sourceNode = this.ctx.createMediaElementSource(this.fileAudio);
+      // For file playback, we need to route it to destination so they hear it
+      this.sourceNode.connect(this.ctx.destination);
+      this._setupAnalyzer();
+      return true;
+    } catch (err) {
+      console.error("[AudioEngine] Error playing file:", err);
+      return false;
+    }
+  }
+
+  _setupAnalyzer() {
+    if (!this.analyzer) {
+      this.analyzer = this.ctx.createAnalyser();
+      this.analyzer.fftSize = 2048;
+      this.analyzer.smoothingTimeConstant = 0.7;
+    }
+    this.sourceNode.connect(this.analyzer);
+    this.dataArray = new Uint8Array(this.analyzer.frequencyBinCount);
+    this.isActive = true;
+  }
+
+  // File Playback Controls
+  getAudioTime() {
+    return this.fileAudio ? this.fileAudio.currentTime : 0;
+  }
+
+  getAudioDuration() {
+    return this.fileAudio && !isNaN(this.fileAudio.duration) ? this.fileAudio.duration : 0;
+  }
+
+  seek(time) {
+    if (this.fileAudio) {
+      this.fileAudio.currentTime = time;
     }
   }
 
