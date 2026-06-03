@@ -1321,8 +1321,7 @@ body.nocursor {
 }
 
 .warning-container {
-  background: rgba(10, 0, 0, 0.9) !important;
-  color: var(--danger) !important;
+  background: rgba(10, 0, 0, 0.95) !important;
 }
 
 .warning-btn-accept {
