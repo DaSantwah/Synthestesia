@@ -185,12 +185,11 @@ export class HydraController {
   // ── PRESET 02 · Psychedelic Tide ──────────────────────────────────
   _p2_psychedelicTide() {
     this._s(
-      voronoi(() => 4 + audioMid * 4, 0.05)
+      voronoi(8, 0.05)
         .diff(osc(() => 2 + audioBass * 10, 0.1).rotate(() => time * 0.2 + audioLowMid * 0.5))
-        .kaleid(5) // Fixed integer for WebGL safety
+        .kaleid(5)
         .color(...this._cRot(180, () => 1.0 + audioBeat * 0.8))
-        .modulateScale(noise(3, 0.1), () => audioBass * 1.5)
-        .blend(noise(() => 2 + audioBass * 3, 0.01), 0.1)
+        .modulate(noise(3, 0.1), () => audioBass * 0.5) // Safe modulation
     ).out(o0);
   }
 
@@ -223,12 +222,11 @@ export class HydraController {
   // ── PRESET 05 · Ethereal Bloom ────────────────────────────────────
   _p5_etherealBloom() {
     this._s(
-      noise(() => 2 + audioSub * 5, 0.05)
-        .modulate(voronoi(() => 5 + audioMid * 5, 0.05), () => audioBass * 0.5)
-        .pixelate(() => 20 + audioBass * 80, () => 20 + audioBass * 80)
+      noise(() => 2 + audioSub * 5, 0.05) // Safe noise
+        .modulate(voronoi(() => 5 + audioMid * 5, 0.05), () => audioBass * 0.5) // Safe modulate
         .colorama(() => audioBrilliance * 0.2)
         .color(...this._cRot(45, () => 1.2 + audioLowMid * 0.8))
-        .modulateScale(src(o0), () => audioBass * 0.2) // Safe feedback
+        .modulateHue(src(o0), () => audioBass * 0.2) // Safe feedback modulation
     ).out(o0);
   }
 
@@ -271,22 +269,17 @@ export class HydraController {
   _p8_neonWake() {
     this._s(
       shape(4, 0.9, 0.01)
-        .scale(1, () => window.innerHeight / window.innerWidth)
+        .scale(1.5, 0.5) // Safe static scale
         .repeat(20, 20)
-        .modulateScale(osc(10).rotate(1.57), 0.5)
-        .scrollY(() => time * 0.5 + audioLowMid * 2.0)
-        .modulateScrollY(osc(() => 5 + audioBass * 10), () => audioSub * 1.0)
+        .modulate(osc(10).rotate(1.57), 0.5)
+        .scrollY(() => time * 0.5 + audioLowMid * 1.0) 
         .color(...this._cRot(240, () => 1.0 + audioBass * 2.0))
         .add(
-          shape(20, () => 0.4 + audioMid * 0.8, 0.2) // Pulse without clipping radius
+          shape(20, 0.4, 0.2) // Safe static radius
             .color(...this._cRot(30, () => 1.5 + audioHigh * 2.0))
             .scrollY(-0.2)
             .scale(() => 1.0 + audioBass * 0.5), 
           0.8
-        )
-        .blend(
-          src(o0).scale(1.02).modulate(noise(2), () => 0.01 + audioHigh * 0.1), // Safe trail
-          0.4
         )
     ).out(o0);
   }
@@ -309,32 +302,31 @@ export class HydraController {
   // ── PRESET 10 · CRT Glitch Scanlines ──────────────────────────────
   _p10_dreamScan() {
     this._s(
-      osc(() => 20 + audioBass * 50, 0.05, () => audioMid * 1.5) // Base scanline oscillator
+      osc(() => 50 + audioBass * 50, 0.05, () => audioMid * 1.5) // Simple lines
+        .rotate(Math.PI / 2) // Make them horizontal
         .modulate(noise(() => 3 + audioMid * 5, 0.1), () => audioBass * 0.2)
         .color(...this._cRot(60, () => 0.8 + audioVol * 0.5))
         .add(
-          osc(() => 100 + audioHigh * 200, 0.1)
+          osc(100, 0.1) // Static scanline
+            .rotate(Math.PI / 2)
             .color(1, 1, 1)
-            .scale(1, 0.05)
             .scrollY(() => time * -0.5), 
           () => audioBeat * 0.8
         )
-        .scrollX(() => (audioMid - 0.5) * 0.2 * audioBeat) // Glitch horizontal tears
-        .scrollY(() => time * 0.1) // Constant vertical scan
-        .blend(src(o0).scale(1.01).scrollY(() => time * -0.01), 0.3) // Safe blend feedback
+        .scrollX(() => (audioMid - 0.5) * 0.1 * audioBeat) 
     ).out(o0);
   }
 
   // ── PRESET 11 · Orbital Solar Flares ──────────────────────────────
   _p11_velvetShift() {
     this._s(
-      shape(100, 0.1, 0.9) // Giant core sphere
+      shape(100, 0.1, 0.9)
         .scale(() => 1.0 + audioBass * 1.2)
         .color(...this._cRot(0, () => 1.5 + audioMid * 1.0))
-        .modulateScale(osc(() => 5 + audioHigh * 10).rotate(() => time * 0.5), () => audioLowMid * 2.0)
+        .modulate(osc(() => 5 + audioHigh * 10).rotate(() => time * 0.5), () => audioLowMid * 0.5) // Safe modulation
         .add(
           shape(100, 0.02, 1.0)
-            .scale(() => 2.0 + audioSub * 2.5) // Outer expanding halo
+            .scale(() => 2.0 + audioSub * 2.5)
             .color(...this._cRot(30, () => audioHigh * 2.0)),
           0.5
         )
@@ -415,14 +407,13 @@ export class HydraController {
     this._s(
       shape(2, 0.01)
         .repeat(20, 100)
-        .modulateScale(osc(10).rotate(Math.PI / 2), 0.5)
-        .modulate(osc(() => 10 + audioBass * 30), () => audioMid * 0.5) // Replaced modulateRepeat
-        .modulateScrollY(noise(() => 2 + audioBass * 5, 0.1), () => audioSub * 2.0)
+        .modulate(osc(10).rotate(Math.PI / 2), 0.5)
+        .modulate(osc(() => 10 + audioBass * 30), () => audioMid * 0.5) 
+        .scrollY(() => time * 0.5) // Constant scroll instead of modulateScrollY
         .color(...this._cRot(180, () => 1.5 + audioHigh * 2.0))
         .add(
           noise(() => 3 + audioMid * 10, 0.1)
-            .color(...this._cRot(0, () => audioBass * 2.0))
-            .scrollY(() => time * 0.5),
+            .color(...this._cRot(0, () => audioBass * 2.0)),
           0.3
         )
         .kaleid(2)

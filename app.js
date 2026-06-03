@@ -60,6 +60,15 @@ const $colorPanel      = document.getElementById('color-panel');
 const $customPanel     = document.getElementById('custom-preset-panel');
 const $dropZone        = document.getElementById('drop-zone');
 const $fileInput       = document.getElementById('file-input');
+const $sensSlider      = document.getElementById('sens-slider');
+const $sensValue       = document.getElementById('sens-value'); // Added reference
+
+// Sensibilidad visual listener
+if ($sensSlider && $sensValue) {
+  $sensSlider.addEventListener('input', (e) => {
+    $sensValue.textContent = `${parseFloat(e.target.value).toFixed(2)}x`;
+  });
+}
 const $btnMicStart     = document.getElementById('btn-mic-start');
 const $trackName       = document.getElementById('track-name');
 const $trackTime       = document.getElementById('track-time');
