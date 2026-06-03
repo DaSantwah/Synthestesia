@@ -23,9 +23,9 @@ window.audioBass = 0; window.audioMid = 0; window.audioHigh = 0; window.audioVol
 window.audioSub = 0; window.audioLowMid = 0; window.audioPresence = 0; window.audioBrilliance = 0;
 window.audioBeat = 0; window.audioBeatMid = 0;
 
-import { AudioAnalyzer }  from './audio-analyzer.js?v=3';
-import { HydraController } from './hydra-controller.js?v=3';
-import { VideoRecorder }   from './recorder.js?v=3';
+import { AudioAnalyzer }  from './audio-analyzer.js?v=4';
+import { HydraController } from './hydra-controller.js?v=4';
+import { VideoRecorder }   from './recorder.js?v=4';
 
 // ── Audio globals ───────────────────────────────────────────────────
 window.audioBass       = 0;
