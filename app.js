@@ -107,7 +107,6 @@ const $lumValue        = document.getElementById('lum-value');
 const $colorPresetBtns = document.querySelectorAll('.color-preset-btn');
 const $seekBar         = document.getElementById('seek-bar');
 const $seekFill        = document.getElementById('seek-bar-fill');
-const $sensSlider      = document.getElementById('sens-slider');
 
 const specCtx = $specCanvas.getContext('2d');
 let animFrameId = null;
