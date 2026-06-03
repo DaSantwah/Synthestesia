@@ -163,19 +163,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Event: Screen Capture
+  // Event: System Audio (Screen capture without video)
   $btnScreen.addEventListener('click', async () => {
-    try {
-      await visual.toggleScreenCapture();
-      if (visual.screenActive) {
-        $btnScreen.classList.add('active');
-        $btnScreen.style.color = 'var(--accent)';
-      } else {
-        $btnScreen.classList.remove('active');
-        $btnScreen.style.color = '';
-      }
-    } catch (e) {
-      console.warn("Screen capture failed:", e);
+    const ok = await audio.startSystemAudio();
+    if (ok) {
+      $btnScreen.classList.add('active');
+      $btnScreen.style.color = 'var(--accent)';
+      $btnMic.classList.remove('active');
+      $btnMic.style.color = '';
+      $btnUpload.classList.remove('active');
+      $btnUpload.style.color = '';
+      if ($playbackContainer) $playbackContainer.style.display = 'none';
     }
   });
 

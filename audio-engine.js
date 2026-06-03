@@ -48,6 +48,33 @@ export class AudioEngine {
     }
   }
 
+  async startSystemAudio() {
+    try {
+      if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === 'suspended') await this.ctx.resume();
+
+      if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+      if (this.fileAudio) { this.fileAudio.pause(); this.fileAudio.src = ''; }
+      if (this.sourceNode) { this.sourceNode.disconnect(); }
+
+      this.stream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, // Required by spec
+        audio: true
+      });
+      
+      // Stop the video track since we only want audio
+      const videoTracks = this.stream.getVideoTracks();
+      videoTracks.forEach(t => t.stop());
+
+      this.sourceNode = this.ctx.createMediaStreamSource(this.stream);
+      this._setupAnalyzer();
+      return true;
+    } catch (err) {
+      console.error("[AudioEngine] System audio capture denied:", err);
+      return false;
+    }
+  }
+
   async playFile(file) {
     try {
       if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
