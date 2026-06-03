@@ -87,7 +87,6 @@ const $btnDownloadModal  = document.getElementById('btn-download-modal');
 const $btnCloseModal     = document.getElementById('btn-close-modal');
 const $btnReset        = document.getElementById('btn-reset');
 const $btnToggleColor  = document.getElementById('btn-toggle-color');
-const $btnSnapshot     = document.getElementById('btn-snapshot');
 const $btnMidi         = document.getElementById('btn-midi');
 const $btnCustomPreset = document.getElementById('btn-custom-preset');
 const $btnScreen       = document.getElementById('btn-screen');
